@@ -22,9 +22,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
         nzShape="circle"
         class="mr-sm"
       />
-      <span class="font-weight-bold text-lg">{{
-        user.name || user['username'] || 'DataSync Admin'
-      }}</span>
+      <span class="font-weight-bold text-lg">{{ user.name || user['username'] || 'Admin' }}</span>
     </div>
     <nz-dropdown-menu #userMenu="nzDropdownMenu">
       <div nz-menu class="width-sm">

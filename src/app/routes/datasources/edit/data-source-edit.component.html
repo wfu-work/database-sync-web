@@ -1,0 +1,108 @@
+<section class="datasource-edit-page">
+  <div class="page-heading">
+    <title-label title="编辑数据源" description="调整数据库连接配置，保存后同步任务会使用新的连接信息。" />
+  </div>
+
+  <div class="edit-layout">
+    <nz-card class="form-card" [nzBordered]="false">
+      <nz-spin [nzSpinning]="loading">
+        <div class="form-title">
+          <h2>连接配置</h2>
+          @if (item) {
+            <span class="guid-chip">{{ item.guid }}</span>
+          }
+        </div>
+
+        <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+          <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+            <sv label="名称 *" [col]="2">
+              <input nz-input formControlName="name" placeholder="例如：生产 MySQL" />
+            </sv>
+
+            <sv label="类型 *">
+              <nz-select formControlName="type" (ngModelChange)="applyTypeDefaults($event)">
+                <nz-option nzValue="mysql" nzLabel="MySQL" />
+                <nz-option nzValue="tdengine" nzLabel="TDengine" />
+              </nz-select>
+            </sv>
+
+            <sv label="端口 *">
+              <nz-input-number formControlName="port" [nzMin]="1" [nzPrecision]="0" />
+            </sv>
+
+            <sv label="主机 *" [col]="2">
+              <input nz-input formControlName="host" placeholder="127.0.0.1" />
+            </sv>
+
+            <sv label="用户名">
+              <input nz-input formControlName="username" placeholder="root" />
+            </sv>
+
+            <sv label="密码">
+              <input
+                nz-input
+                type="password"
+                formControlName="password"
+                placeholder="留空则不覆盖旧密码"
+              />
+            </sv>
+
+            <sv label="数据库" [col]="2">
+              <input nz-input formControlName="database" placeholder="database name" />
+            </sv>
+
+            <sv label="连接参数 JSON" [col]="2">
+              <textarea
+                nz-input
+                formControlName="params"
+                rows="3"
+                placeholder='例如：{"charset":"utf8mb4"}'
+              ></textarea>
+            </sv>
+
+            <sv label="备注" [col]="2">
+              <textarea nz-input formControlName="remark" rows="2"></textarea>
+            </sv>
+
+            <sv label="状态" [col]="2">
+              <nz-select formControlName="status">
+                <nz-option [nzValue]="1" nzLabel="启用" />
+                <nz-option [nzValue]="0" nzLabel="禁用" />
+              </nz-select>
+            </sv>
+          </sv-container>
+
+          <div class="form-actions">
+            <button nz-button type="button" (click)="resetForm()" [disabled]="!item">重置</button>
+            <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+              保存修改
+            </button>
+          </div>
+        </form>
+      </nz-spin>
+    </nz-card>
+
+    <aside class="context-panel">
+      <section class="context-block context-primary">
+        <div class="context-icon"><i nz-icon nzType="edit"></i></div>
+        <h3>编辑说明</h3>
+        <p>保存后，后续同步、表结构读取和备份都会使用新的连接配置。</p>
+      </section>
+
+      <section class="context-block">
+        <h3>保存影响</h3>
+        <ul class="context-list">
+          <li><i nz-icon nzType="check-circle"></i><span>密码留空时不会覆盖原密码。</span></li>
+          <li><i nz-icon nzType="check-circle"></i><span>主机、端口或数据库变化后建议重新测试连接。</span></li>
+          <li><i nz-icon nzType="check-circle"></i><span>禁用后，依赖该数据源的任务不应继续执行。</span></li>
+        </ul>
+      </section>
+
+      <section class="context-block">
+        <h3>参数示例</h3>
+        <div class="code-line">&#123;"charset":"utf8mb4"&#125;</div>
+        <div class="code-line">&#123;"parseTime":"true","loc":"Local"&#125;</div>
+      </section>
+    </aside>
+  </div>
+</section>

@@ -7,11 +7,13 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { STChange, STColumn } from '@delon/abc/st';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
 import { SyncError, SyncProgress, SyncRun } from '@shared/types/datasync';
-import { finalize, switchMap, timer } from 'rxjs';
+import { NzMessageService } from 'ng-zorro-antd/message';
+import { NzModalService } from 'ng-zorro-antd/modal';
+import { finalize, switchMap, takeWhile, timer } from 'rxjs';
 
 import { SyncRunsService } from '../sync-runs.service';
 
@@ -24,7 +26,10 @@ import { SyncRunsService } from '../sync-runs.service';
 })
 export class SyncRunDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly runsService = inject(SyncRunsService);
+  private readonly modal = inject(NzModalService);
+  private readonly message = inject(NzMessageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -35,6 +40,7 @@ export class SyncRunDetailComponent implements OnInit {
   protected errorsTotal = 0;
   protected loading = false;
   protected errorsLoading = false;
+  protected retrying = false;
   protected readonly q = {
     page: 1,
     size: 10,
@@ -67,6 +73,12 @@ export class SyncRunDetailComponent implements OnInit {
     if (this.status === 'failed') return 'exception';
     if (this.status === 'running') return 'active';
     return 'normal';
+  }
+
+  protected get canRetryErrors(): boolean {
+    return (
+      (this.progress?.failedCount ?? this.run?.failedCount ?? 0) > 0 && this.status !== 'running'
+    );
   }
 
   protected refresh(): void {
@@ -114,6 +126,34 @@ export class SyncRunDetailComponent implements OnInit {
     }
   }
 
+  protected retryErrors(): void {
+    if (!this.guid || !this.canRetryErrors) return;
+    this.modal.confirm({
+      nzTitle: '重试失败明细',
+      nzContent: '将基于当前运行记录中的失败行生成一次新的同步运行，确定继续？',
+      nzOkText: '重试',
+      nzCancelText: '取消',
+      nzOnOk: () => {
+        this.retrying = true;
+        this.runsService
+          .retryErrors(this.guid)
+          .pipe(
+            finalize(() => {
+              this.retrying = false;
+              this.cdr.markForCheck();
+            }),
+          )
+          .subscribe({
+            next: (run) => {
+              this.message.success('失败明细已开始重试');
+              this.router.navigate(['/sync/runs', run.guid]);
+            },
+            error: (err) => this.message.error(err?.msg || err?.message || '重试失败明细失败'),
+          });
+      },
+    });
+  }
+
   private loadRun(): void {
     if (!this.guid) return;
     this.loading = true;
@@ -154,16 +194,21 @@ export class SyncRunDetailComponent implements OnInit {
     timer(0, 3000)
       .pipe(
         switchMap(() => this.runsService.progress(this.guid)),
+        takeWhile((res) => !this.isTerminal(res.status), true),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((res) => {
         this.progress = res;
-        if (res.status === 'success' || res.status === 'failed' || res.status === 'canceled') {
+        if (this.isTerminal(res.status)) {
           this.loadRun();
           this.loadErrors();
         }
         this.cdr.markForCheck();
       });
+  }
+
+  private isTerminal(status: string): boolean {
+    return status === 'success' || status === 'failed' || status === 'canceled';
   }
 
   protected errorTableChange(event: STChange): void {

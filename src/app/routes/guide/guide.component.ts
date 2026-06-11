@@ -22,15 +22,15 @@ export class GuideComponent {
     {
       title: '创建数据源',
       desc: '录入 MySQL 或 TDengine 的连接信息，并使用测试连接确认服务可达。',
-      path: '/datasources/list',
-      action: '管理数据源',
+      path: '/datasources/create',
+      action: '新建数据源',
       fields: ['type: mysql / tdengine', 'host / port', 'username / password', 'database'],
     },
     {
       title: '配置同步任务',
       desc: '选择源数据源和目标数据源，填写表名、同步模式、批次大小与写入策略。',
-      path: '/sync/tasks/list',
-      action: '管理任务',
+      path: '/sync/tasks/create',
+      action: '新建任务',
       fields: ['sourceGuid / targetGuid', 'sourceTable / targetTable', 'mode', 'writeMode'],
     },
     {

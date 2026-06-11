@@ -7,22 +7,16 @@ import {
 } from '@angular/core';
 import { NonNullableFormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { STChange, STColumn } from '@delon/abc/st';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
 import {
   ColumnInfo,
   DataSource,
   FieldMapping,
-  MapperRow,
   SaveSyncTaskPayload,
-  ScheduleItem,
-  SyncTask,
-  SyncTaskPreviewResult,
   TableInfo,
   ValidateSyncTaskResult,
 } from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { NzModalService } from 'ng-zorro-antd/modal';
 import { finalize } from 'rxjs';
 
 import { DataSourcesService } from '../../datasources/datasources.service';
@@ -36,66 +30,34 @@ const FIELD_SAMPLE = [
 ];
 
 @Component({
-  selector: 'app-sync-task-list',
-  templateUrl: './sync-task-list.component.html',
-  styleUrls: ['./sync-task-list.component.less'],
+  selector: 'app-sync-task-create',
+  templateUrl: './sync-task-create.component.html',
+  styleUrls: ['./sync-task-create.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SHARED_IMPORTS, TitleLabelComponent],
 })
-export class SyncTaskListComponent implements OnInit {
+export class SyncTaskCreateComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly taskService = inject(SyncTasksService);
   private readonly dataSourcesService = inject(DataSourcesService);
   private readonly message = inject(NzMessageService);
-  private readonly modal = inject(NzModalService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  protected readonly q = {
-    page: 1,
-    size: 10,
-    keyword: '',
-    mode: '',
-    status: '',
-    scheduleOn: '',
-  };
-
-  protected data: SyncTask[] = [];
   protected dataSources: DataSource[] = [];
   protected sourceTables: TableInfo[] = [];
   protected targetTables: TableInfo[] = [];
   protected sourceColumns: ColumnInfo[] = [];
   protected targetColumns: ColumnInfo[] = [];
-  protected schedules: ScheduleItem[] = [];
-  protected total = 0;
-  protected loading = false;
   protected saving = false;
   protected sourceTableLoading = false;
   protected targetTableLoading = false;
   protected sourceColumnLoading = false;
   protected targetColumnLoading = false;
   protected validationLoading = false;
-  protected previewLoading = false;
-  protected scheduleLoading = false;
-  protected runningGuid = '';
-  protected stoppingGuid = '';
-  protected validatingGuid = '';
-  protected previewingGuid = '';
-  protected editing: SyncTask | null = null;
   protected formError = '';
   protected fieldError = '';
   protected validationResult: ValidateSyncTaskResult | null = null;
-  protected previewVisible = false;
-  protected previewResult: SyncTaskPreviewResult | null = null;
-  protected sourcePreviewColumns: string[] = [];
-  protected mappedPreviewColumns: string[] = [];
-  protected readonly columns: Array<STColumn<SyncTask>> = [
-    { title: '任务', index: 'name', render: 'taskRender' },
-    { title: '数据链路', index: 'sourceGuid', render: 'routeRender' },
-    { title: '同步策略', index: 'mode', render: 'strategyRender' },
-    { title: '最近运行', index: 'lastRunStatus', render: 'lastRunRender', width: 140 },
-    { title: '操作', render: 'actionsRender', width: 390 },
-  ];
 
   protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(128)]],
@@ -119,44 +81,9 @@ export class SyncTaskListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDataSources();
-    this.loadSchedules();
-    this.getData();
-  }
-
-  protected getData(): void {
-    this.loading = true;
-    this.taskService
-      .list(this.q)
-      .pipe(
-        finalize(() => {
-          this.loading = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe((res) => {
-        this.data = res.data ?? [];
-        this.total = res.total ?? 0;
-        this.q.page = res.page || this.q.page;
-        this.q.size = res.size || this.q.size;
-      });
-  }
-
-  protected search(): void {
-    this.q.page = 1;
-    this.getData();
-  }
-
-  protected resetQuery(): void {
-    this.q.page = 1;
-    this.q.keyword = '';
-    this.q.mode = '';
-    this.q.status = '';
-    this.q.scheduleOn = '';
-    this.getData();
   }
 
   protected resetForm(): void {
-    this.editing = null;
     this.formError = '';
     this.fieldError = '';
     this.validationResult = null;
@@ -182,36 +109,8 @@ export class SyncTaskListComponent implements OnInit {
     });
   }
 
-  protected goCreate(): void {
-    this.router.navigate(['/sync/tasks/create']);
-  }
-
-  protected edit(item: SyncTask): void {
-    this.editing = item;
-    this.formError = '';
-    this.fieldError = '';
-    this.validationResult = null;
-    this.form.reset({
-      name: item.name,
-      sourceGuid: item.sourceGuid,
-      targetGuid: item.targetGuid,
-      sourceTable: item.sourceTable,
-      targetTable: item.targetTable,
-      mode: item.mode === 'incremental' ? 'incremental' : 'full',
-      cursorField: item.cursorField ?? '',
-      cursorValue: item.cursorValue ?? '',
-      batchSize: item.batchSize || 1000,
-      writeMode: this.normalizeWriteMode(item.writeMode),
-      conflictKeys: item.conflictKeys ?? '',
-      whereClause: item.whereClause ?? '',
-      scheduleOn: item.scheduleOn ?? 0,
-      cronExpr: item.cronExpr ?? '',
-      fieldsText: this.prettyFields(item.fieldMapping),
-      remark: item.remark ?? '',
-      status: item.status ?? 1,
-    });
-    this.loadTables('source', item.sourceTable);
-    this.loadTables('target', item.targetTable);
+  protected goList(): void {
+    this.router.navigate(['/sync/tasks/list']);
   }
 
   protected insertSample(): void {
@@ -279,7 +178,6 @@ export class SyncTaskListComponent implements OnInit {
   }
 
   protected submit(): void {
-    if (!this.editing) return;
     this.formError = '';
     this.fieldError = '';
     if (this.form.invalid) {
@@ -295,7 +193,7 @@ export class SyncTaskListComponent implements OnInit {
 
     this.saving = true;
     this.taskService
-      .save(payload, this.editing.guid)
+      .save(payload)
       .pipe(
         finalize(() => {
           this.saving = false;
@@ -304,9 +202,8 @@ export class SyncTaskListComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.message.success('同步任务已更新');
-          this.resetForm();
-          this.getData();
+          this.message.success('同步任务已创建');
+          this.goList();
         },
         error: (err) => this.message.error(err?.msg || err?.message || '保存同步任务失败'),
       });
@@ -333,186 +230,9 @@ export class SyncTaskListComponent implements OnInit {
       });
   }
 
-  protected run(item: SyncTask): void {
-    this.runningGuid = item.guid;
-    this.taskService
-      .run(item.guid)
-      .pipe(
-        finalize(() => {
-          this.runningGuid = '';
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (run) => {
-          this.message.success('同步任务已开始执行');
-          this.router.navigate(['/sync/runs', run.guid]);
-        },
-        error: (err) => this.message.error(err?.msg || err?.message || '启动同步任务失败'),
-      });
-  }
-
-  protected stop(item: SyncTask): void {
-    this.modal.confirm({
-      nzTitle: '停止同步任务',
-      nzContent: `确定请求停止「${item.name}」当前正在执行的同步吗？`,
-      nzOkText: '停止',
-      nzOkDanger: true,
-      nzCancelText: '取消',
-      nzOnOk: () => {
-        this.stoppingGuid = item.guid;
-        this.taskService
-          .stop(item.guid)
-          .pipe(
-            finalize(() => {
-              this.stoppingGuid = '';
-              this.cdr.markForCheck();
-            }),
-          )
-          .subscribe({
-            next: () => {
-              this.message.success('已请求停止同步任务');
-              this.getData();
-            },
-            error: (err) => this.message.error(err?.msg || err?.message || '停止同步任务失败'),
-          });
-      },
-    });
-  }
-
-  protected validateTask(item: SyncTask): void {
-    this.edit(item);
-    this.validatingGuid = item.guid;
-    this.taskService
-      .validateSaved(item.guid)
-      .pipe(
-        finalize(() => {
-          this.validatingGuid = '';
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => this.showValidation(res),
-        error: (err) => this.message.error(err?.msg || err?.message || '校验同步任务失败'),
-      });
-  }
-
-  protected previewTask(item: SyncTask): void {
-    this.previewVisible = true;
-    this.previewResult = null;
-    this.sourcePreviewColumns = [];
-    this.mappedPreviewColumns = [];
-    this.previewingGuid = item.guid;
-    this.previewLoading = true;
-    this.taskService
-      .preview(item.guid, { limit: 20 })
-      .pipe(
-        finalize(() => {
-          this.previewingGuid = '';
-          this.previewLoading = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => {
-          this.previewResult = res;
-          this.sourcePreviewColumns = this.rowKeys(res.sourceRows ?? []);
-          this.mappedPreviewColumns = this.rowKeys(res.mappedRows ?? []);
-          if (!res.count) this.message.info('当前任务没有可预览的数据');
-        },
-        error: (err) => this.message.error(err?.msg || err?.message || '预览同步任务失败'),
-      });
-  }
-
-  protected closePreview(): void {
-    this.previewVisible = false;
-  }
-
-  protected reloadSchedules(): void {
-    this.scheduleLoading = true;
-    this.taskService
-      .reloadSchedules()
-      .pipe(
-        finalize(() => {
-          this.scheduleLoading = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: () => {
-          this.message.success('调度已重载');
-          this.loadSchedules();
-          this.getData();
-        },
-        error: (err) => this.message.error(err?.msg || err?.message || '重载调度失败'),
-      });
-  }
-
-  protected remove(item: SyncTask): void {
-    this.modal.confirm({
-      nzTitle: '删除同步任务',
-      nzContent: `确定删除「${item.name}」吗？历史运行记录不会随前端一起清理。`,
-      nzOkDanger: true,
-      nzOkText: '删除',
-      nzCancelText: '取消',
-      nzOnOk: () =>
-        this.taskService.delete(item.guid).subscribe({
-          next: () => {
-            this.message.success('同步任务已删除');
-            this.getData();
-          },
-          error: (err) => this.message.error(err?.msg || err?.message || '删除同步任务失败'),
-        }),
-    });
-  }
-
-  protected sourceName(guid: string): string {
-    return this.dataSources.find((item) => item.guid === guid)?.name || guid || '-';
-  }
-
-  protected modeLabel(mode: string): string {
-    return mode === 'incremental' ? '增量' : '全量';
-  }
-
-  protected statusLabel(status: number): string {
-    return status === 1 ? '启用' : '禁用';
-  }
-
-  protected runStatusLabel(status: string): string {
-    const map: Record<string, string> = {
-      pending: '等待',
-      running: '运行中',
-      success: '成功',
-      failed: '失败',
-      canceled: '取消',
-    };
-    return map[status] || '-';
-  }
-
-  protected scheduleLabel(item: SyncTask): string {
-    return Number(item.scheduleOn) === 1 ? item.cronExpr || '已启用' : '手动';
-  }
-
-  protected isRunning(item: SyncTask): boolean {
-    return item.lastRunStatus === 'running';
-  }
-
-  protected cellText(value: unknown): string {
-    if (value === null || value === undefined) return '-';
-    if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
-  }
-
   protected columnSummary(columns: ColumnInfo[]): string {
     if (columns.length === 0) return '未读取';
     return columns.map((column) => column.name).join(', ');
-  }
-
-  protected formatTime(value?: number): string {
-    if (!value) return '-';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '-';
-    return date.toLocaleString('zh-CN', { hour12: false });
   }
 
   private loadDataSources(): void {
@@ -621,19 +341,6 @@ export class SyncTaskListComponent implements OnInit {
     this.targetColumns = [];
   }
 
-  private loadSchedules(): void {
-    this.taskService.schedules().subscribe({
-      next: (items) => {
-        this.schedules = items ?? [];
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.schedules = [];
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
   private toPayload(): SaveSyncTaskPayload | null {
     const value = this.form.getRawValue();
     if (Number(value.scheduleOn) === 1 && !value.cronExpr.trim()) {
@@ -678,12 +385,6 @@ export class SyncTaskListComponent implements OnInit {
     }
   }
 
-  private rowKeys(rows: MapperRow[]): string[] {
-    const keys = new Set<string>();
-    rows.forEach((row) => Object.keys(row).forEach((key) => keys.add(key)));
-    return Array.from(keys);
-  }
-
   private parseFields(value: string): FieldMapping[] | null {
     try {
       const fields = JSON.parse(value) as FieldMapping[];
@@ -702,34 +403,6 @@ export class SyncTaskListComponent implements OnInit {
     } catch {
       this.fieldError = '字段映射不是合法 JSON';
       return null;
-    }
-  }
-
-  private prettyFields(value: string): string {
-    try {
-      return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-      return value || JSON.stringify(FIELD_SAMPLE, null, 2);
-    }
-  }
-
-  private normalizeWriteMode(value: string): 'insert' | 'upsert' | 'replace' {
-    if (value === 'upsert' || value === 'replace') return value;
-    return 'insert';
-  }
-
-  protected tableChange(event: STChange): void {
-    switch (event.type) {
-      case 'pi':
-      case 'ps':
-      case 'filter':
-      case 'sort':
-        this.q.page = event.pi;
-        this.q.size = event.ps;
-        this.getData();
-        break;
-      default:
-        break;
     }
   }
 }

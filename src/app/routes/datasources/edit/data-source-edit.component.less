@@ -1,0 +1,178 @@
+:host {
+  display: block;
+}
+
+.datasource-edit-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.page-heading,
+.form-title,
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.edit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) minmax(320px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.form-card {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+}
+
+.form-title {
+  margin-bottom: 14px;
+}
+
+.form-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1d2b3f;
+}
+
+.guid-chip {
+  overflow: hidden;
+  max-width: 260px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #5d687a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #f5f7fb;
+}
+
+.sv-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-sv {
+  display: block;
+}
+
+:host ::ng-deep .form-sv .sv__detail > span {
+  display: block;
+  width: 100%;
+}
+
+:host ::ng-deep .form-sv .sv__label {
+  font-weight: 700;
+  color: #41516a;
+}
+
+.form-card input,
+.form-card textarea,
+.form-card nz-select,
+.form-card nz-input-number {
+  width: 100%;
+}
+
+.form-actions {
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.context-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.context-block {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 72%);
+}
+
+.context-primary {
+  border-color: rgb(var(--nm-primary-rgb) / 18%);
+  background: rgb(var(--nm-primary-rgb) / 6%);
+}
+
+.context-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--nm-primary);
+  background: rgb(var(--nm-primary-rgb) / 12%);
+}
+
+.context-block h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1d2b3f;
+}
+
+.context-block p,
+.context-list {
+  max-width: 620px;
+  margin: 0;
+  color: #5d687a;
+  line-height: 1.7;
+}
+
+.context-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.context-list li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.context-list i {
+  margin-top: 4px;
+  color: #168a46;
+}
+
+.code-line {
+  overflow: hidden;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #41516a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #f5f7fb;
+}
+
+@media (max-width: 1199px) {
+  .edit-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page-heading,
+  .form-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

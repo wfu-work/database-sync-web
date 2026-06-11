@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { StartupService } from '@core';
 import { ReuseTabService } from '@delon/abc/reuse-tab';
 import { DA_SERVICE_TOKEN, ITokenModel } from '@delon/auth';
@@ -30,7 +30,6 @@ interface LoginResponse {
   styleUrls: ['./login.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     NzCheckboxModule,
     NzAlertModule,

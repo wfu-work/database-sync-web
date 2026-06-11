@@ -42,7 +42,7 @@ export class StartupService {
     });
     this.titleService.suffix = 'DataSync';
     this.settingService.setUser({
-      name: 'DataSync Admin',
+      name: 'Admin',
       avatar: 'assets/avatar.gif',
       roleCodeList: ['ADMIN'],
       abilities: [],

@@ -2,6 +2,8 @@ export type DataSourceType = 'mysql' | 'tdengine';
 export type SyncMode = 'full' | 'incremental';
 export type WriteMode = 'insert' | 'upsert' | 'replace';
 export type RunStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
+export type BackupStatus = 'pending' | 'running' | 'success' | 'failed';
+export type MapperRow = Record<string, unknown>;
 
 export interface BaseEntity {
   guid: string;
@@ -20,6 +22,31 @@ export interface DataSource extends BaseEntity {
   params: string;
   remark: string;
   status: number;
+}
+
+export interface TableInfo {
+  name: string;
+  type: string;
+  comment: string;
+}
+
+export interface ColumnInfo {
+  name: string;
+  databaseType: string;
+  nullable: boolean;
+  primaryKey: boolean;
+  comment: string;
+}
+
+export interface PreviewTableRequest {
+  table: string;
+  whereClause?: string;
+  limit?: number;
+}
+
+export interface TablePreviewResult {
+  rows: MapperRow[];
+  count: number;
 }
 
 export interface SaveDataSourcePayload {
@@ -57,6 +84,8 @@ export interface SyncTask extends BaseEntity {
   writeMode: WriteMode | string;
   conflictKeys: string;
   whereClause: string;
+  cronExpr: string;
+  scheduleOn: number;
   lastRunGuid: string;
   lastRunStatus: RunStatus | string;
   remark: string;
@@ -78,8 +107,42 @@ export interface SaveSyncTaskPayload {
   writeMode: WriteMode;
   conflictKeys?: string;
   whereClause?: string;
+  cronExpr?: string;
+  scheduleOn?: number;
   remark?: string;
   status?: number;
+}
+
+export interface ValidateSyncTaskResult {
+  valid: boolean;
+  errors: string[];
+  sourceColumns: ColumnInfo[];
+  targetColumns: ColumnInfo[];
+  missingSourceFields: string[];
+  missingTargetFields: string[];
+  estimatedSourceCount: number;
+  fieldMappingRowCount: number;
+  sourceDatasourceGuid: string;
+  targetDatasourceGuid: string;
+  sourceTable: string;
+  targetTable: string;
+}
+
+export interface SyncTaskPreviewRequest {
+  limit?: number;
+}
+
+export interface SyncTaskPreviewResult {
+  sourceRows: MapperRow[];
+  mappedRows: MapperRow[];
+  count: number;
+}
+
+export interface ScheduleItem {
+  taskGuid: string;
+  taskName: string;
+  cronExpr: string;
+  entryId: number;
 }
 
 export interface SyncRun extends BaseEntity {
@@ -118,4 +181,31 @@ export interface SyncError extends BaseEntity {
   sourcePk: string;
   sourceData: string;
   errorMessage: string;
+}
+
+export interface DatabaseBackup extends BaseEntity {
+  dataSourceGuid: string;
+  dataSourceName: string;
+  dataSourceType: DataSourceType | string;
+  database: string;
+  tables: string;
+  format: string;
+  status: BackupStatus | string;
+  totalTables: number;
+  totalRows: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  startTime: number;
+  endTime: number;
+  durationMs: number;
+  lastError: string;
+  remark: string;
+}
+
+export interface StartDatabaseBackupPayload {
+  dataSourceGuid: string;
+  tables?: string[];
+  batchSize?: number;
+  remark?: string;
 }

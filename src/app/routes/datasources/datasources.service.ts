@@ -1,6 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { DataSource, SaveDataSourcePayload } from '@shared/types/datasync';
+import {
+  ColumnInfo,
+  DataSource,
+  PreviewTableRequest,
+  SaveDataSourcePayload,
+  TableInfo,
+  TablePreviewResult,
+} from '@shared/types/datasync';
 import { PageQuery, PageResult } from '@shared/types/page';
 import { Observable } from 'rxjs';
 
@@ -33,7 +40,21 @@ export class DataSourcesService {
     return this.http.post<boolean>(`/datasources/${guid}/test`, {});
   }
 
-  private toParams(query: DataSourceQuery): HttpParams {
+  tables(guid: string): Observable<TableInfo[]> {
+    return this.http.get<TableInfo[]>(`/datasources/${guid}/tables`);
+  }
+
+  columns(guid: string, table: string): Observable<ColumnInfo[]> {
+    return this.http.get<ColumnInfo[]>(`/datasources/${guid}/columns`, {
+      params: this.toParams({ table }),
+    });
+  }
+
+  preview(guid: string, payload: PreviewTableRequest): Observable<TablePreviewResult> {
+    return this.http.post<TablePreviewResult>(`/datasources/${guid}/preview`, payload);
+  }
+
+  private toParams(query: DataSourceQuery | { table: string }): HttpParams {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value === undefined || value === null || value === '') return;

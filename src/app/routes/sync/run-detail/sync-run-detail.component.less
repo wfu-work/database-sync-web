@@ -18,6 +18,13 @@
   min-width: 0;
 }
 
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -133,6 +140,10 @@ pre {
   .query-bar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .page-actions {
+    justify-content: flex-start;
   }
 
   .summary-grid,

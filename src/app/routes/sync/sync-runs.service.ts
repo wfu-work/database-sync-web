@@ -32,6 +32,10 @@ export class SyncRunsService {
     });
   }
 
+  retryErrors(guid: string): Observable<SyncRun> {
+    return this.http.post<SyncRun>(`/sync/runs/${guid}/retry-errors`, {});
+  }
+
   private toParams(query: PageQuery): HttpParams {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {

@@ -1,11 +1,20 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { SaveSyncTaskPayload, SyncRun, SyncTask } from '@shared/types/datasync';
+import {
+  SaveSyncTaskPayload,
+  ScheduleItem,
+  SyncRun,
+  SyncTask,
+  SyncTaskPreviewRequest,
+  SyncTaskPreviewResult,
+  ValidateSyncTaskResult,
+} from '@shared/types/datasync';
 import { PageQuery, PageResult } from '@shared/types/page';
 import { Observable } from 'rxjs';
 
 export interface SyncTaskQuery extends PageQuery {
   mode?: string;
+  scheduleOn?: string | number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +40,30 @@ export class SyncTasksService {
 
   run(guid: string): Observable<SyncRun> {
     return this.http.post<SyncRun>(`/sync/tasks/${guid}/run`, {});
+  }
+
+  stop(guid: string): Observable<boolean> {
+    return this.http.post<boolean>(`/sync/tasks/${guid}/stop`, {});
+  }
+
+  validate(payload: SaveSyncTaskPayload): Observable<ValidateSyncTaskResult> {
+    return this.http.post<ValidateSyncTaskResult>('/sync/tasks/validate', payload);
+  }
+
+  validateSaved(guid: string): Observable<ValidateSyncTaskResult> {
+    return this.http.get<ValidateSyncTaskResult>(`/sync/tasks/${guid}/validate`);
+  }
+
+  preview(guid: string, payload: SyncTaskPreviewRequest = {}): Observable<SyncTaskPreviewResult> {
+    return this.http.post<SyncTaskPreviewResult>(`/sync/tasks/${guid}/preview`, payload);
+  }
+
+  schedules(): Observable<ScheduleItem[]> {
+    return this.http.get<ScheduleItem[]>('/sync/tasks/schedules');
+  }
+
+  reloadSchedules(): Observable<boolean> {
+    return this.http.post<boolean>('/sync/tasks/schedules/reload', {});
   }
 
   private toParams(query: SyncTaskQuery): HttpParams {

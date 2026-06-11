@@ -1,0 +1,122 @@
+<section class="backup-create-page">
+  <div class="page-heading">
+    <title-label title="新建备份" description="选择数据源和备份范围，创建数据库备份任务。" />
+  </div>
+
+  <div class="create-layout">
+    <nz-card class="form-card" [nzBordered]="false">
+      <div class="form-title">
+        <h2>备份配置</h2>
+        <span class="form-chip">{{ form.controls.tables.value.length || '全部' }} 表</span>
+      </div>
+
+      <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+        <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+          <sv label="数据源 *" [col]="2">
+            <nz-select
+              formControlName="dataSourceGuid"
+              nzShowSearch
+              nzPlaceHolder="选择需要备份的数据源"
+              [nzLoading]="dataSourceLoading"
+              (ngModelChange)="onDataSourceChange($event)"
+            >
+              @for (item of dataSources; track item.guid) {
+                <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+              }
+            </nz-select>
+          </sv>
+
+          <sv label="备份表" [col]="2">
+            <nz-select
+              formControlName="tables"
+              nzMode="multiple"
+              nzShowSearch
+              nzPlaceHolder="不选择则备份全部表"
+              [nzLoading]="tableLoading"
+              [nzDisabled]="!form.controls.dataSourceGuid.value"
+              [nzMaxTagCount]="4"
+            >
+              @for (table of tables; track table.name) {
+                <nz-option
+                  [nzValue]="table.name"
+                  [nzLabel]="table.comment ? table.name + ' - ' + table.comment : table.name"
+                />
+              }
+            </nz-select>
+            <span class="table-tools">
+              <button
+                nz-button
+                nzSize="small"
+                type="button"
+                [disabled]="tables.length === 0"
+                (click)="selectAllTables()"
+              >
+                全选表
+              </button>
+              <button
+                nz-button
+                nzSize="small"
+                type="button"
+                [disabled]="form.controls.tables.value.length === 0"
+                (click)="clearTables()"
+              >
+                清空
+              </button>
+            </span>
+          </sv>
+
+          <sv label="批次大小 *">
+            <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
+          </sv>
+
+          <sv label="备注">
+            <textarea
+              nz-input
+              formControlName="remark"
+              rows="3"
+              placeholder="例如：上线前全量备份"
+            ></textarea>
+          </sv>
+        </sv-container>
+
+        <div class="form-actions">
+          <button nz-button type="button" (click)="resetForm()">重置</button>
+          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+            <i nz-icon nzType="save"></i>
+            开始备份
+          </button>
+        </div>
+      </form>
+    </nz-card>
+
+    <aside class="context-panel">
+      <section class="context-block context-primary">
+        <div class="context-icon"><i nz-icon nzType="hdd"></i></div>
+        <h3>备份包内容</h3>
+        <p>每次备份会生成一个压缩包，包含清单、表结构和按行导出的数据文件。</p>
+      </section>
+
+      <section class="context-block">
+        <h3>范围策略</h3>
+        <ul class="context-list">
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>不选择表时，默认备份当前数据源全部表。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>业务高峰期建议按关键表分批执行。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>批次越大吞吐越高，也会占用更多内存。</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="context-block">
+        <h3>文件结构</h3>
+        <div class="code-line">manifest.json</div>
+        <div class="code-line">schema.json</div>
+        <div class="code-line">data.jsonl</div>
+      </section>
+    </aside>
+  </div>
+</section>

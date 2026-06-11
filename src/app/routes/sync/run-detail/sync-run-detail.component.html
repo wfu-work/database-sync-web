@@ -5,10 +5,16 @@
       description="跟踪单次同步的处理进度、游标、错误和源数据快照。"
       [showBack]="true"
     />
-    <button nz-button (click)="refresh()">
-      <i nz-icon nzType="reload"></i>
-      刷新
-    </button>
+    <div class="page-actions">
+      <button nz-button [disabled]="!canRetryErrors" [nzLoading]="retrying" (click)="retryErrors()">
+        <i nz-icon nzType="redo"></i>
+        重试失败
+      </button>
+      <button nz-button (click)="refresh()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
   </div>
 
   <nz-spin [nzSpinning]="loading">

@@ -1,0 +1,105 @@
+<section class="datasource-create-page">
+  <div class="page-heading">
+    <title-label
+      title="新建数据源"
+      description="录入 MySQL 或 TDengine 连接配置，创建后可在同步任务中复用。"
+    />
+  </div>
+
+  <div class="create-layout">
+    <nz-card class="form-card" [nzBordered]="false">
+      <div class="form-title">
+        <h2>新建数据源</h2>
+      </div>
+
+      <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+        <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+          <sv label="名称 *" [col]="2">
+            <input nz-input formControlName="name" placeholder="例如：生产 MySQL" />
+          </sv>
+
+          <sv label="类型 *">
+            <nz-select formControlName="type" (ngModelChange)="applyTypeDefaults($event)">
+              <nz-option nzValue="mysql" nzLabel="MySQL" />
+              <nz-option nzValue="tdengine" nzLabel="TDengine" />
+            </nz-select>
+          </sv>
+
+          <sv label="端口 *">
+            <nz-input-number formControlName="port" [nzMin]="1" [nzPrecision]="0" />
+          </sv>
+
+          <sv label="主机 *" [col]="2">
+            <input nz-input formControlName="host" placeholder="127.0.0.1" />
+          </sv>
+
+          <sv label="用户名">
+            <input nz-input formControlName="username" placeholder="root" />
+          </sv>
+
+          <sv label="密码">
+            <input nz-input type="password" formControlName="password" placeholder="数据库密码" />
+          </sv>
+
+          <sv label="数据库" [col]="2">
+            <input nz-input formControlName="database" placeholder="database name" />
+          </sv>
+
+          <sv label="连接参数 JSON" [col]="2">
+            <textarea
+              nz-input
+              formControlName="params"
+              rows="3"
+              placeholder='例如：{"charset":"utf8mb4"}'
+            ></textarea>
+          </sv>
+
+          <sv label="备注" [col]="2">
+            <textarea nz-input formControlName="remark" rows="2"></textarea>
+          </sv>
+
+          <sv label="状态" [col]="2">
+            <nz-select formControlName="status">
+              <nz-option [nzValue]="1" nzLabel="启用" />
+              <nz-option [nzValue]="0" nzLabel="禁用" />
+            </nz-select>
+          </sv>
+        </sv-container>
+
+        <div class="form-actions">
+          <button nz-button type="button" (click)="resetForm()">重置</button>
+          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+            创建数据源
+          </button>
+        </div>
+      </form>
+    </nz-card>
+
+    <aside class="context-panel">
+      <section class="context-block context-primary">
+        <div class="context-icon"><i nz-icon nzType="database"></i></div>
+        <h3>连接档案</h3>
+        <p>建议使用能表达环境和用途的名称，例如“生产 MySQL”或“设备时序库”。</p>
+      </section>
+
+      <section class="context-block">
+        <h3>连接检查</h3>
+        <ul class="context-list">
+          <li><i nz-icon nzType="check-circle"></i><span>主机与端口可以从后端服务访问。</span></li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>账号拥有读取表结构和数据的权限。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>TDengine 常用 REST 端口为 6041。</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="context-block">
+        <h3>参数示例</h3>
+        <div class="code-line">&#123;"charset":"utf8mb4"&#125;</div>
+        <div class="code-line">&#123;"parseTime":"true","loc":"Local"&#125;</div>
+      </section>
+    </aside>
+  </div>
+</section>

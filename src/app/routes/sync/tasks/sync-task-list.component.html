@@ -1,19 +1,24 @@
 <section class="sync-task-page">
   <div class="page-heading">
-    <title-label title="同步任务" description="配置源表、目标表、同步模式、字段映射和写入策略。" />
+    <title-label title="同步任务" description="查看、执行、校验和维护同步任务。" />
     <div class="page-actions">
+      <span class="schedule-chip">调度 {{ schedules.length }}</span>
+      <button nz-button [nzLoading]="scheduleLoading" (click)="reloadSchedules()">
+        <i nz-icon nzType="reload"></i>
+        重载调度
+      </button>
       <button nz-button (click)="getData()">
         <i nz-icon nzType="reload"></i>
         刷新
       </button>
-      <button nz-button nzType="primary" (click)="create()">
+      <button nz-button nzType="primary" (click)="goCreate()">
         <i nz-icon nzType="plus"></i>
         新建任务
       </button>
     </div>
   </div>
 
-  <div class="sync-task-layout">
+  <div class="sync-task-layout" [class.sync-task-layout-single]="!editing">
     <nz-card class="list-card" [nzBordered]="false">
       <div class="query-bar">
         <nz-input-wrapper>
@@ -34,6 +39,11 @@
           <nz-option nzValue="" nzLabel="全部状态" />
           <nz-option nzValue="1" nzLabel="启用" />
           <nz-option nzValue="0" nzLabel="禁用" />
+        </nz-select>
+        <nz-select [(ngModel)]="q.scheduleOn" nzPlaceHolder="调度" (ngModelChange)="search()">
+          <nz-option nzValue="" nzLabel="全部调度" />
+          <nz-option nzValue="1" nzLabel="定时" />
+          <nz-option nzValue="0" nzLabel="手动" />
         </nz-select>
         <button nz-button nzType="primary" (click)="search()">搜索</button>
         <button nz-button (click)="resetQuery()">重置</button>
@@ -67,6 +77,7 @@
             @if (item.cursorField) {
               · 游标 {{ item.cursorField }}
             }
+            · {{ scheduleLabel(item) }}
           </div>
         </ng-template>
 
@@ -87,11 +98,41 @@
               nz-button
               nzType="link"
               [nzLoading]="runningGuid === item.guid"
-              [disabled]="item.status !== 1"
+              [disabled]="item.status !== 1 || isRunning(item)"
               (click)="run(item)"
             >
               <i nz-icon nzType="play-circle"></i>
               执行
+            </button>
+            @if (isRunning(item)) {
+              <button
+                nz-button
+                nzType="link"
+                nzDanger
+                [nzLoading]="stoppingGuid === item.guid"
+                (click)="stop(item)"
+              >
+                <i nz-icon nzType="pause-circle"></i>
+                停止
+              </button>
+            }
+            <button
+              nz-button
+              nzType="link"
+              [nzLoading]="validatingGuid === item.guid"
+              (click)="validateTask(item)"
+            >
+              <i nz-icon nzType="check-circle"></i>
+              校验
+            </button>
+            <button
+              nz-button
+              nzType="link"
+              [nzLoading]="previewingGuid === item.guid"
+              (click)="previewTask(item)"
+            >
+              <i nz-icon nzType="eye"></i>
+              预览
             </button>
             @if (item.lastRunGuid) {
               <button nz-button nzType="link" [routerLink]="['/sync/runs', item.lastRunGuid]">
@@ -112,173 +153,417 @@
       </st>
     </nz-card>
 
-    <nz-card class="form-card" [nzBordered]="false">
-      <div class="form-title">
-        <h2>{{ editing ? '编辑同步任务' : '新建同步任务' }}</h2>
-        @if (editing) {
-          <button nz-button nzSize="small" (click)="create()">退出编辑</button>
-        }
-      </div>
-
-      <form nz-form [formGroup]="form" nzLayout="vertical" (ngSubmit)="submit()">
-        <nz-form-item>
-          <nz-form-label nzRequired>任务名称</nz-form-label>
-          <nz-form-control nzErrorTip="请输入任务名称">
-            <input
-              nz-input
-              formControlName="name"
-              placeholder="例如：MySQL 设备数据同步到 TDengine"
-            />
-          </nz-form-control>
-        </nz-form-item>
-
-        <div class="form-grid">
-          <nz-form-item>
-            <nz-form-label nzRequired>源数据源</nz-form-label>
-            <nz-form-control nzErrorTip="请选择源数据源">
-              <nz-select formControlName="sourceGuid" nzShowSearch>
-                @for (item of dataSources; track item.guid) {
-                  <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
-                }
-              </nz-select>
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label nzRequired>目标数据源</nz-form-label>
-            <nz-form-control nzErrorTip="请选择目标数据源">
-              <nz-select formControlName="targetGuid" nzShowSearch>
-                @for (item of dataSources; track item.guid) {
-                  <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
-                }
-              </nz-select>
-            </nz-form-control>
-          </nz-form-item>
+    @if (editing) {
+      <nz-card class="form-card" [nzBordered]="false">
+        <div class="form-title">
+          <h2>编辑同步任务</h2>
+          <button nz-button nzSize="small" (click)="resetForm()">退出编辑</button>
         </div>
 
-        <div class="form-grid">
+        <form nz-form [formGroup]="form" nzLayout="vertical" (ngSubmit)="submit()">
           <nz-form-item>
-            <nz-form-label nzRequired>源表</nz-form-label>
-            <nz-form-control nzErrorTip="请输入源表">
-              <input nz-input formControlName="sourceTable" placeholder="sensor_data" />
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label nzRequired>目标表</nz-form-label>
-            <nz-form-control nzErrorTip="请输入目标表">
-              <input nz-input formControlName="targetTable" placeholder="sensor_data" />
-            </nz-form-control>
-          </nz-form-item>
-        </div>
-
-        <div class="form-grid form-grid-compact">
-          <nz-form-item>
-            <nz-form-label nzRequired>模式</nz-form-label>
-            <nz-form-control>
-              <nz-select formControlName="mode">
-                <nz-option nzValue="full" nzLabel="全量同步" />
-                <nz-option nzValue="incremental" nzLabel="增量同步" />
-              </nz-select>
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label nzRequired>批次大小</nz-form-label>
-            <nz-form-control>
-              <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label nzRequired>写入模式</nz-form-label>
-            <nz-form-control>
-              <nz-select formControlName="writeMode">
-                <nz-option nzValue="insert" nzLabel="insert" />
-                <nz-option nzValue="upsert" nzLabel="upsert" />
-                <nz-option nzValue="replace" nzLabel="replace" />
-              </nz-select>
-            </nz-form-control>
-          </nz-form-item>
-        </div>
-
-        <div class="form-grid">
-          <nz-form-item>
-            <nz-form-label>游标字段</nz-form-label>
-            <nz-form-control>
-              <input nz-input formControlName="cursorField" placeholder="增量模式必填，例如 id" />
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label>当前游标值</nz-form-label>
-            <nz-form-control>
-              <input nz-input formControlName="cursorValue" placeholder="可留空" />
-            </nz-form-control>
-          </nz-form-item>
-        </div>
-
-        <div class="form-grid">
-          <nz-form-item>
-            <nz-form-label>冲突字段</nz-form-label>
-            <nz-form-control>
+            <nz-form-label nzRequired>任务名称</nz-form-label>
+            <nz-form-control nzErrorTip="请输入任务名称">
               <input
                 nz-input
-                formControlName="conflictKeys"
-                placeholder="upsert 时使用，逗号分隔"
+                formControlName="name"
+                placeholder="例如：MySQL 设备数据同步到 TDengine"
               />
             </nz-form-control>
           </nz-form-item>
 
+          <div class="form-grid">
+            <nz-form-item>
+              <nz-form-label nzRequired>源数据源</nz-form-label>
+              <nz-form-control nzErrorTip="请选择源数据源">
+                <nz-select
+                  formControlName="sourceGuid"
+                  nzShowSearch
+                  (ngModelChange)="onSourceDataSourceChange($event)"
+                >
+                  @for (item of dataSources; track item.guid) {
+                    <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+                  }
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label nzRequired>目标数据源</nz-form-label>
+              <nz-form-control nzErrorTip="请选择目标数据源">
+                <nz-select
+                  formControlName="targetGuid"
+                  nzShowSearch
+                  (ngModelChange)="onTargetDataSourceChange($event)"
+                >
+                  @for (item of dataSources; track item.guid) {
+                    <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+                  }
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <div class="form-grid">
+            <nz-form-item>
+              <nz-form-label nzRequired>源表</nz-form-label>
+              <nz-form-control nzErrorTip="请输入源表">
+                <div class="field-action">
+                  <input
+                    nz-input
+                    formControlName="sourceTable"
+                    list="source-table-options"
+                    placeholder="sensor_data"
+                    (change)="onSourceTableChange(form.controls.sourceTable.value)"
+                  />
+                  <button
+                    nz-button
+                    type="button"
+                    [nzLoading]="sourceTableLoading"
+                    [disabled]="!form.controls.sourceGuid.value"
+                    (click)="refreshSourceTables()"
+                  >
+                    <i nz-icon nzType="reload"></i>
+                  </button>
+                </div>
+                <datalist id="source-table-options">
+                  @for (table of sourceTables; track table.name) {
+                    <option [value]="table.name">{{ table.comment || table.type }}</option>
+                  }
+                </datalist>
+                <div class="metadata-line" [class.loading]="sourceColumnLoading">
+                  源字段：{{ columnSummary(sourceColumns) }}
+                </div>
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label nzRequired>目标表</nz-form-label>
+              <nz-form-control nzErrorTip="请输入目标表">
+                <div class="field-action">
+                  <input
+                    nz-input
+                    formControlName="targetTable"
+                    list="target-table-options"
+                    placeholder="sensor_data"
+                    (change)="onTargetTableChange(form.controls.targetTable.value)"
+                  />
+                  <button
+                    nz-button
+                    type="button"
+                    [nzLoading]="targetTableLoading"
+                    [disabled]="!form.controls.targetGuid.value"
+                    (click)="refreshTargetTables()"
+                  >
+                    <i nz-icon nzType="reload"></i>
+                  </button>
+                </div>
+                <datalist id="target-table-options">
+                  @for (table of targetTables; track table.name) {
+                    <option [value]="table.name">{{ table.comment || table.type }}</option>
+                  }
+                </datalist>
+                <div class="metadata-line" [class.loading]="targetColumnLoading">
+                  目标字段：{{ columnSummary(targetColumns) }}
+                </div>
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <div class="form-grid form-grid-compact">
+            <nz-form-item>
+              <nz-form-label nzRequired>模式</nz-form-label>
+              <nz-form-control>
+                <nz-select formControlName="mode">
+                  <nz-option nzValue="full" nzLabel="全量同步" />
+                  <nz-option nzValue="incremental" nzLabel="增量同步" />
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label nzRequired>批次大小</nz-form-label>
+              <nz-form-control>
+                <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label nzRequired>写入模式</nz-form-label>
+              <nz-form-control>
+                <nz-select formControlName="writeMode">
+                  <nz-option nzValue="insert" nzLabel="insert" />
+                  <nz-option nzValue="upsert" nzLabel="upsert" />
+                  <nz-option nzValue="replace" nzLabel="replace" />
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <div class="form-grid">
+            <nz-form-item>
+              <nz-form-label>游标字段</nz-form-label>
+              <nz-form-control>
+                <input
+                  nz-input
+                  formControlName="cursorField"
+                  list="source-column-options"
+                  placeholder="增量模式必填，例如 id"
+                />
+                <datalist id="source-column-options">
+                  @for (column of sourceColumns; track column.name) {
+                    <option [value]="column.name">{{ column.databaseType }}</option>
+                  }
+                </datalist>
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label>当前游标值</nz-form-label>
+              <nz-form-control>
+                <input nz-input formControlName="cursorValue" placeholder="可留空" />
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <div class="form-grid">
+            <nz-form-item>
+              <nz-form-label>冲突字段</nz-form-label>
+              <nz-form-control>
+                <input
+                  nz-input
+                  formControlName="conflictKeys"
+                  placeholder="upsert 时使用，逗号分隔"
+                />
+              </nz-form-control>
+            </nz-form-item>
+
+            <nz-form-item>
+              <nz-form-label>状态</nz-form-label>
+              <nz-form-control>
+                <nz-select formControlName="status">
+                  <nz-option [nzValue]="1" nzLabel="启用" />
+                  <nz-option [nzValue]="0" nzLabel="禁用" />
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
           <nz-form-item>
-            <nz-form-label>状态</nz-form-label>
+            <nz-form-label>源表过滤条件</nz-form-label>
             <nz-form-control>
-              <nz-select formControlName="status">
-                <nz-option [nzValue]="1" nzLabel="启用" />
-                <nz-option [nzValue]="0" nzLabel="禁用" />
-              </nz-select>
+              <textarea
+                nz-input
+                formControlName="whereClause"
+                rows="2"
+                placeholder="例如：deleted = 0"
+              ></textarea>
             </nz-form-control>
           </nz-form-item>
-        </div>
 
-        <nz-form-item>
-          <nz-form-label>源表过滤条件</nz-form-label>
-          <nz-form-control>
-            <textarea
-              nz-input
-              formControlName="whereClause"
-              rows="2"
-              placeholder="例如：deleted = 0"
-            ></textarea>
-          </nz-form-control>
-        </nz-form-item>
+          <div class="form-grid">
+            <nz-form-item>
+              <nz-form-label>定时执行</nz-form-label>
+              <nz-form-control>
+                <nz-select formControlName="scheduleOn">
+                  <nz-option [nzValue]="0" nzLabel="手动执行" />
+                  <nz-option [nzValue]="1" nzLabel="启用定时" />
+                </nz-select>
+              </nz-form-control>
+            </nz-form-item>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>
-            字段映射 JSON
-            <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
-              插入示例
+            <nz-form-item>
+              <nz-form-label>Cron 表达式</nz-form-label>
+              <nz-form-control>
+                <input nz-input formControlName="cronExpr" placeholder="例如：0 */5 * * * *" />
+              </nz-form-control>
+            </nz-form-item>
+          </div>
+
+          <nz-form-item>
+            <nz-form-label nzRequired>
+              字段映射 JSON
+              <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
+                插入示例
+              </button>
+              <button
+                nz-button
+                nzType="link"
+                nzSize="small"
+                type="button"
+                (click)="generateSameNameMapping()"
+              >
+                同名字段生成
+              </button>
+            </nz-form-label>
+            <nz-form-control
+              [nzValidateStatus]="fieldError ? 'error' : ''"
+              [nzErrorTip]="fieldError"
+            >
+              <textarea
+                nz-input
+                formControlName="fieldsText"
+                rows="10"
+                spellcheck="false"
+              ></textarea>
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
+            <nz-form-label>备注</nz-form-label>
+            <nz-form-control>
+              <textarea nz-input formControlName="remark" rows="2"></textarea>
+            </nz-form-control>
+          </nz-form-item>
+
+          @if (formError) {
+            <nz-alert class="form-error" nzType="warning" nzShowIcon [nzMessage]="formError" />
+          }
+
+          <div class="form-actions">
+            <button nz-button type="button" (click)="resetForm()">取消编辑</button>
+            <button
+              nz-button
+              type="button"
+              [nzLoading]="validationLoading"
+              (click)="validateForm()"
+            >
+              校验配置
             </button>
-          </nz-form-label>
-          <nz-form-control [nzValidateStatus]="fieldError ? 'error' : ''" [nzErrorTip]="fieldError">
-            <textarea nz-input formControlName="fieldsText" rows="10" spellcheck="false"></textarea>
-          </nz-form-control>
-        </nz-form-item>
+            <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+              保存修改
+            </button>
+          </div>
+        </form>
 
-        <nz-form-item>
-          <nz-form-label>备注</nz-form-label>
-          <nz-form-control>
-            <textarea nz-input formControlName="remark" rows="2"></textarea>
-          </nz-form-control>
-        </nz-form-item>
-
-        <div class="form-actions">
-          <button nz-button type="button" (click)="create()">重置</button>
-          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
-            {{ editing ? '保存修改' : '创建任务' }}
-          </button>
-        </div>
-      </form>
-    </nz-card>
+        @if (validationResult) {
+          <div class="validation-panel" [class.validation-ok]="validationResult.valid">
+            <nz-alert
+              [nzType]="validationResult.valid ? 'success' : 'warning'"
+              nzShowIcon
+              [nzMessage]="validationResult.valid ? '配置校验通过' : '配置校验未通过'"
+            />
+            <div class="validation-grid">
+              <div>
+                <span>预计源数据</span>
+                <strong>{{ validationResult.estimatedSourceCount || 0 }}</strong>
+              </div>
+              <div>
+                <span>字段映射</span>
+                <strong>{{ validationResult.fieldMappingRowCount || 0 }}</strong>
+              </div>
+              <div>
+                <span>源字段</span>
+                <strong>{{ validationResult.sourceColumns.length || 0 }}</strong>
+              </div>
+              <div>
+                <span>目标字段</span>
+                <strong>{{ validationResult.targetColumns.length || 0 }}</strong>
+              </div>
+            </div>
+            @if (validationResult.errors.length) {
+              <ul class="validation-errors">
+                @for (error of validationResult.errors; track error) {
+                  <li>{{ error }}</li>
+                }
+              </ul>
+            }
+            @if (validationResult.missingSourceFields.length) {
+              <div class="missing-fields">
+                <strong>缺失源字段</strong>
+                @for (field of validationResult.missingSourceFields; track field) {
+                  <code>{{ field }}</code>
+                }
+              </div>
+            }
+            @if (validationResult.missingTargetFields.length) {
+              <div class="missing-fields">
+                <strong>缺失目标字段</strong>
+                @for (field of validationResult.missingTargetFields; track field) {
+                  <code>{{ field }}</code>
+                }
+              </div>
+            }
+          </div>
+        }
+      </nz-card>
+    }
   </div>
+
+  <nz-drawer
+    [nzVisible]="previewVisible"
+    [nzWidth]="860"
+    nzTitle="同步任务预览"
+    (nzOnClose)="closePreview()"
+  >
+    <ng-container *nzDrawerContent>
+      <nz-spin [nzSpinning]="previewLoading">
+        @if (previewResult) {
+          <div class="preview-summary">
+            <strong>{{ previewResult.count || 0 }}</strong>
+            <span>行样例数据</span>
+          </div>
+          <div class="preview-sections">
+            <section class="preview-section">
+              <h3>源数据</h3>
+              @if (previewResult.sourceRows.length > 0) {
+                <div class="preview-table-wrap">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        @for (column of sourcePreviewColumns; track column) {
+                          <th>{{ column }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of previewResult.sourceRows; track $index) {
+                        <tr>
+                          @for (column of sourcePreviewColumns; track column) {
+                            <td>{{ cellText(row[column]) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <div class="empty-state">没有源数据样例。</div>
+              }
+            </section>
+
+            <section class="preview-section">
+              <h3>映射结果</h3>
+              @if (previewResult.mappedRows.length > 0) {
+                <div class="preview-table-wrap">
+                  <table class="preview-table">
+                    <thead>
+                      <tr>
+                        @for (column of mappedPreviewColumns; track column) {
+                          <th>{{ column }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of previewResult.mappedRows; track $index) {
+                        <tr>
+                          @for (column of mappedPreviewColumns; track column) {
+                            <td>{{ cellText(row[column]) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <div class="empty-state">没有映射结果样例。</div>
+              }
+            </section>
+          </div>
+        } @else {
+          <div class="empty-state">正在读取预览数据。</div>
+        }
+      </nz-spin>
+    </ng-container>
+  </nz-drawer>
 </section>

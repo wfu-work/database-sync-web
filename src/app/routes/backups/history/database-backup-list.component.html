@@ -1,0 +1,240 @@
+<section class="backup-page">
+  <div class="page-heading">
+    <title-label
+      title="备份历史"
+      description="查看数据库备份状态、文件信息、备份范围和下载记录。"
+    />
+    <div class="page-actions">
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+      <button nz-button nzType="primary" routerLink="/backups/create">
+        <i nz-icon nzType="plus"></i>
+        新建备份
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="query-bar">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="search" />
+        <input
+          nz-input
+          [(ngModel)]="q.keyword"
+          placeholder="搜索备份 GUID、数据源、文件名或备注"
+          (keydown.enter)="search()"
+        />
+      </nz-input-wrapper>
+      <nz-select
+        [(ngModel)]="q.dataSourceGuid"
+        nzPlaceHolder="数据源"
+        nzShowSearch
+        (ngModelChange)="search()"
+      >
+        <nz-option nzValue="" nzLabel="全部数据源" />
+        @for (item of dataSources; track item.guid) {
+          <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+        }
+      </nz-select>
+      <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+        <nz-option nzValue="" nzLabel="全部状态" />
+        <nz-option nzValue="pending" nzLabel="等待" />
+        <nz-option nzValue="running" nzLabel="备份中" />
+        <nz-option nzValue="success" nzLabel="成功" />
+        <nz-option nzValue="failed" nzLabel="失败" />
+      </nz-select>
+      <button nz-button nzType="primary" (click)="search()">搜索</button>
+      <button nz-button (click)="resetQuery()">重置</button>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="backupRender" let-item>
+        <div class="strong">{{ item.fileName || item.guid }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+        @if (item.remark) {
+          <div class="muted ellipsis">{{ item.remark }}</div>
+        }
+      </ng-template>
+
+      <ng-template st-row="sourceRender" let-item>
+        <div>{{ item.dataSourceName || '-' }}</div>
+        <div class="muted">
+          {{ item.dataSourceType || '-' }}
+          @if (item.database) {
+            · {{ item.database }}
+          }
+        </div>
+      </ng-template>
+
+      <ng-template st-row="statusRender" let-item>
+        <span class="status" [class]="statusClass(item.status)">
+          {{ statusLabel(item.status) }}
+        </span>
+        @if (item.lastError) {
+          <div class="muted error-text">{{ item.lastError }}</div>
+        }
+      </ng-template>
+
+      <ng-template st-row="scopeRender" let-item>
+        <div>{{ item.totalTables || 0 }} 张表</div>
+        <div class="muted">{{ item.totalRows || 0 }} 行</div>
+      </ng-template>
+
+      <ng-template st-row="fileRender" let-item>
+        <div>{{ fileSize(item.fileSize) }}</div>
+        <div class="muted">{{ item.format || 'zip' }}</div>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        <div>{{ formatTime(item.startTime || item.createTime) }}</div>
+        <div class="muted">耗时 {{ duration(item.durationMs) }}</div>
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button nz-button nzType="link" (click)="openDetail(item)">
+            <i nz-icon nzType="eye"></i>
+            详情
+          </button>
+          @if (item.status === 'success') {
+            <button
+              nz-button
+              nzType="link"
+              [nzLoading]="downloadingGuid === item.guid"
+              (click)="download(item)"
+            >
+              <i nz-icon nzType="export"></i>
+              下载
+            </button>
+          }
+        </div>
+      </ng-template>
+    </st>
+  </nz-card>
+
+  <nz-drawer
+    [nzVisible]="detailVisible"
+    [nzWidth]="760"
+    nzTitle="备份详情"
+    (nzOnClose)="closeDetail()"
+  >
+    <ng-container *nzDrawerContent>
+      <nz-spin [nzSpinning]="detailLoading">
+        @if (selectedBackup) {
+          <div class="detail-head">
+            <div>
+              <div class="strong">{{ selectedBackup.fileName || selectedBackup.guid }}</div>
+              <div class="muted mono">{{ selectedBackup.guid }}</div>
+            </div>
+            <div class="detail-actions">
+              <span class="status" [class]="statusClass(selectedBackup.status)">
+                {{ statusLabel(selectedBackup.status) }}
+              </span>
+              @if (selectedBackup.status === 'success') {
+                <button
+                  nz-button
+                  nzType="primary"
+                  [nzLoading]="downloadingGuid === selectedBackup.guid"
+                  (click)="download(selectedBackup)"
+                >
+                  <i nz-icon nzType="export"></i>
+                  下载
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div>
+              <span>数据源</span>
+              <strong>{{ selectedBackup.dataSourceName || '-' }}</strong>
+            </div>
+            <div>
+              <span>数据库</span>
+              <strong>{{ selectedBackup.database || '-' }}</strong>
+            </div>
+            <div>
+              <span>备份格式</span>
+              <strong>{{ selectedBackup.format || 'zip' }}</strong>
+            </div>
+            <div>
+              <span>文件大小</span>
+              <strong>{{ fileSize(selectedBackup.fileSize) }}</strong>
+            </div>
+            <div>
+              <span>总表数</span>
+              <strong>{{ selectedBackup.totalTables || 0 }}</strong>
+            </div>
+            <div>
+              <span>总行数</span>
+              <strong>{{ selectedBackup.totalRows || 0 }}</strong>
+            </div>
+            <div>
+              <span>开始时间</span>
+              <strong>{{
+                formatTime(selectedBackup.startTime || selectedBackup.createTime)
+              }}</strong>
+            </div>
+            <div>
+              <span>结束时间</span>
+              <strong>{{ formatTime(selectedBackup.endTime) }}</strong>
+            </div>
+            <div>
+              <span>耗时</span>
+              <strong>{{ duration(selectedBackup.durationMs) }}</strong>
+            </div>
+          </div>
+
+          <section class="detail-section">
+            <h3>备份表</h3>
+            @if (parsedTables(selectedBackup.tables); as backupTables) {
+              @if (backupTables.length > 0) {
+                <div class="table-tags">
+                  @for (table of backupTables; track table) {
+                    <code>{{ table }}</code>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">全部数据表</div>
+              }
+            }
+          </section>
+
+          @if (selectedBackup.filePath) {
+            <section class="detail-section">
+              <h3>文件路径</h3>
+              <div class="path-box mono">{{ selectedBackup.filePath }}</div>
+            </section>
+          }
+
+          @if (selectedBackup.remark) {
+            <section class="detail-section">
+              <h3>备注</h3>
+              <div class="text-box">{{ selectedBackup.remark }}</div>
+            </section>
+          }
+
+          @if (selectedBackup.lastError) {
+            <section class="detail-section">
+              <h3>错误信息</h3>
+              <div class="text-box error-box">{{ selectedBackup.lastError }}</div>
+            </section>
+          }
+        } @else {
+          <div class="empty-state">正在读取备份详情。</div>
+        }
+      </nz-spin>
+    </ng-container>
+  </nz-drawer>
+</section>

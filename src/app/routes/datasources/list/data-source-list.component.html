@@ -1,210 +1,241 @@
 <section class="datasource-page">
   <div class="page-heading">
-    <title-label
-      title="数据源管理"
-      description="维护 MySQL 与 TDengine 的连接配置，供同步任务复用。"
-    />
+    <title-label title="数据源列表" description="查看、测试、编辑 MySQL 与 TDengine 的连接配置。" />
     <div class="page-actions">
       <button nz-button (click)="getData()">
         <i nz-icon nzType="reload"></i>
         刷新
       </button>
-      <button nz-button nzType="primary" (click)="create()">
+      <button nz-button nzType="primary" (click)="goCreate()">
         <i nz-icon nzType="plus"></i>
         新建数据源
       </button>
     </div>
   </div>
 
-  <div class="datasource-layout">
-    <nz-card class="list-card" [nzBordered]="false">
-      <div class="query-bar">
-        <nz-input-wrapper>
-          <nz-icon nzInputPrefix nzType="search" />
-          <input
-            nz-input
-            [(ngModel)]="q.keyword"
-            placeholder="搜索名称、GUID、主机、数据库或备注"
-            (keydown.enter)="search()"
-          />
-        </nz-input-wrapper>
-        <nz-select [(ngModel)]="q.type" nzPlaceHolder="类型" (ngModelChange)="search()">
-          <nz-option nzValue="" nzLabel="全部类型" />
-          <nz-option nzValue="mysql" nzLabel="MySQL" />
-          <nz-option nzValue="tdengine" nzLabel="TDengine" />
-        </nz-select>
-        <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
-          <nz-option nzValue="" nzLabel="全部状态" />
-          <nz-option nzValue="1" nzLabel="启用" />
-          <nz-option nzValue="0" nzLabel="禁用" />
-        </nz-select>
-        <button nz-button nzType="primary" (click)="search()">搜索</button>
-        <button nz-button (click)="resetQuery()">重置</button>
-      </div>
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="query-bar">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="search" />
+        <input
+          nz-input
+          [(ngModel)]="q.keyword"
+          placeholder="搜索名称、GUID、主机、数据库或备注"
+          (keydown.enter)="search()"
+        />
+      </nz-input-wrapper>
+      <nz-select [(ngModel)]="q.type" nzPlaceHolder="类型" (ngModelChange)="search()">
+        <nz-option nzValue="" nzLabel="全部类型" />
+        <nz-option nzValue="mysql" nzLabel="MySQL" />
+        <nz-option nzValue="tdengine" nzLabel="TDengine" />
+      </nz-select>
+      <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+        <nz-option nzValue="" nzLabel="全部状态" />
+        <nz-option nzValue="1" nzLabel="启用" />
+        <nz-option nzValue="0" nzLabel="禁用" />
+      </nz-select>
+      <button nz-button nzType="primary" (click)="search()">搜索</button>
+      <button nz-button (click)="resetQuery()">重置</button>
+    </div>
 
-      <st
-        [data]="data"
-        [columns]="columns"
-        [loading]="loading"
-        [pi]="q.page"
-        [ps]="q.size"
-        [total]="total"
-        [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
-        (change)="tableChange($event)"
-      >
-        <ng-template st-row="nameRender" let-item>
-          <div class="strong">{{ item.name }}</div>
-          <div class="muted mono">{{ item.guid }}</div>
-        </ng-template>
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="nameRender" let-item>
+        <div class="strong">{{ item.name }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+      </ng-template>
 
-        <ng-template st-row="connectionRender" let-item>
-          <div>
-            <span class="pill">{{ sourceTypeLabel(item.type) }}</span>
-            <span class="mono">{{ item.host }}:{{ item.port }}</span>
-          </div>
-          <div class="muted">{{ item.database || '-' }}</div>
-        </ng-template>
-
-        <ng-template st-row="statusRender" let-item>
-          <span class="status" [class.status-off]="item.status !== 1">
-            {{ statusLabel(item.status) }}
-          </span>
-        </ng-template>
-
-        <ng-template st-row="timeRender" let-item>
-          {{ formatTime(item.updateTime) }}
-        </ng-template>
-
-        <ng-template st-row="actionsRender" let-item>
-          <div class="action-col">
-            <button nz-button nzType="link" (click)="edit(item)">
-              <i nz-icon nzType="edit"></i>
-              编辑
-            </button>
-            <button
-              nz-button
-              nzType="link"
-              [nzLoading]="testingGuid === item.guid"
-              (click)="test(item)"
-            >
-              <i nz-icon nzType="link"></i>
-              测试
-            </button>
-            <button nz-button nzType="link" nzDanger (click)="remove(item)">
-              <i nz-icon nzType="delete"></i>
-              删除
-            </button>
-          </div>
-        </ng-template>
-      </st>
-    </nz-card>
-
-    <nz-card class="form-card" [nzBordered]="false">
-      <div class="form-title">
-        <h2>{{ editing ? '编辑数据源' : '新建数据源' }}</h2>
-        @if (editing) {
-          <button nz-button nzSize="small" (click)="create()">退出编辑</button>
-        }
-      </div>
-
-      <form nz-form [formGroup]="form" nzLayout="vertical" (ngSubmit)="submit()">
-        <nz-form-item>
-          <nz-form-label nzRequired>名称</nz-form-label>
-          <nz-form-control nzErrorTip="请输入数据源名称">
-            <input nz-input formControlName="name" placeholder="例如：生产 MySQL" />
-          </nz-form-control>
-        </nz-form-item>
-
-        <div class="form-grid">
-          <nz-form-item>
-            <nz-form-label nzRequired>类型</nz-form-label>
-            <nz-form-control>
-              <nz-select formControlName="type" (ngModelChange)="applyTypeDefaults($event)">
-                <nz-option nzValue="mysql" nzLabel="MySQL" />
-                <nz-option nzValue="tdengine" nzLabel="TDengine" />
-              </nz-select>
-            </nz-form-control>
-          </nz-form-item>
-
-          <nz-form-item>
-            <nz-form-label nzRequired>端口</nz-form-label>
-            <nz-form-control>
-              <nz-input-number formControlName="port" [nzMin]="1" [nzPrecision]="0" />
-            </nz-form-control>
-          </nz-form-item>
+      <ng-template st-row="connectionRender" let-item>
+        <div>
+          <span class="pill">{{ sourceTypeLabel(item.type) }}</span>
+          <span class="mono">{{ item.host }}:{{ item.port }}</span>
         </div>
+        <div class="muted">{{ item.database || '-' }}</div>
+      </ng-template>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>主机</nz-form-label>
-          <nz-form-control nzErrorTip="请输入主机地址">
-            <input nz-input formControlName="host" placeholder="127.0.0.1" />
-          </nz-form-control>
-        </nz-form-item>
+      <ng-template st-row="statusRender" let-item>
+        <span class="status" [class.status-off]="item.status !== 1">
+          {{ statusLabel(item.status) }}
+        </span>
+      </ng-template>
 
-        <div class="form-grid">
-          <nz-form-item>
-            <nz-form-label>用户名</nz-form-label>
-            <nz-form-control>
-              <input nz-input formControlName="username" placeholder="root" />
-            </nz-form-control>
-          </nz-form-item>
+      <ng-template st-row="timeRender" let-item>
+        {{ formatTime(item.updateTime) }}
+      </ng-template>
 
-          <nz-form-item>
-            <nz-form-label>密码</nz-form-label>
-            <nz-form-control>
-              <input
-                nz-input
-                type="password"
-                formControlName="password"
-                [placeholder]="editing ? '留空则不覆盖旧密码' : '数据库密码'"
-              />
-            </nz-form-control>
-          </nz-form-item>
-        </div>
-
-        <nz-form-item>
-          <nz-form-label>数据库</nz-form-label>
-          <nz-form-control>
-            <input nz-input formControlName="database" placeholder="database name" />
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label>连接参数 JSON</nz-form-label>
-          <nz-form-control>
-            <textarea
-              nz-input
-              formControlName="params"
-              rows="3"
-              placeholder='例如：{"charset":"utf8mb4"}'
-            ></textarea>
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label>备注</nz-form-label>
-          <nz-form-control>
-            <textarea nz-input formControlName="remark" rows="2"></textarea>
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label>状态</nz-form-label>
-          <nz-form-control>
-            <nz-select formControlName="status">
-              <nz-option [nzValue]="1" nzLabel="启用" />
-              <nz-option [nzValue]="0" nzLabel="禁用" />
-            </nz-select>
-          </nz-form-control>
-        </nz-form-item>
-
-        <div class="form-actions">
-          <button nz-button type="button" (click)="create()">重置</button>
-          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
-            {{ editing ? '保存修改' : '创建数据源' }}
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button nz-button nzType="link" (click)="edit(item)">
+            <i nz-icon nzType="edit"></i>
+            编辑
+          </button>
+          <button
+            nz-button
+            nzType="link"
+            [nzLoading]="testingGuid === item.guid"
+            (click)="test(item)"
+          >
+            <i nz-icon nzType="link"></i>
+            测试
+          </button>
+          <button nz-button nzType="link" (click)="openInspector(item)">
+            <i nz-icon nzType="table"></i>
+            表
+          </button>
+          <button nz-button nzType="link" nzDanger (click)="remove(item)">
+            <i nz-icon nzType="delete"></i>
+            删除
           </button>
         </div>
-      </form>
-    </nz-card>
-  </div>
+      </ng-template>
+    </st>
+  </nz-card>
+
+  <nz-drawer
+    [nzVisible]="inspectorVisible"
+    [nzWidth]="760"
+    [nzTitle]="inspecting ? inspecting.name + ' · 表预览' : '表预览'"
+    (nzOnClose)="closeInspector()"
+  >
+    <ng-container *nzDrawerContent>
+      <div class="inspector">
+        <nz-spin [nzSpinning]="tableLoading">
+          <form
+            nz-form
+            [formGroup]="previewForm"
+            nzLayout="vertical"
+            class="preview-form"
+            (ngSubmit)="previewData()"
+          >
+            <div class="preview-grid">
+              <nz-form-item>
+                <nz-form-label nzRequired>数据表</nz-form-label>
+                <nz-form-control nzErrorTip="请选择数据表">
+                  <nz-select
+                    formControlName="table"
+                    nzShowSearch
+                    nzPlaceHolder="选择数据表"
+                    (ngModelChange)="onTableChange($event)"
+                  >
+                    @for (table of tables; track table.name) {
+                      <nz-option
+                        [nzValue]="table.name"
+                        [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+                      />
+                    }
+                  </nz-select>
+                </nz-form-control>
+              </nz-form-item>
+
+              <nz-form-item>
+                <nz-form-label>预览条数</nz-form-label>
+                <nz-form-control>
+                  <nz-input-number
+                    formControlName="limit"
+                    [nzMin]="1"
+                    [nzMax]="100"
+                    [nzPrecision]="0"
+                  />
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+
+            <nz-form-item>
+              <nz-form-label>过滤条件</nz-form-label>
+              <nz-form-control>
+                <textarea
+                  nz-input
+                  formControlName="whereClause"
+                  rows="2"
+                  placeholder="例如：deleted = 0"
+                ></textarea>
+              </nz-form-control>
+            </nz-form-item>
+
+            <div class="preview-actions">
+              <button nz-button type="button" (click)="loadTables()">
+                <i nz-icon nzType="reload"></i>
+                重新读取表
+              </button>
+              <button nz-button nzType="primary" htmlType="submit" [nzLoading]="previewLoading">
+                <i nz-icon nzType="eye"></i>
+                预览数据
+              </button>
+            </div>
+          </form>
+        </nz-spin>
+
+        <nz-card class="inspector-card" [nzBordered]="false">
+          <div class="card-heading">
+            <h3>字段结构</h3>
+            <span>{{ schemaColumns.length }} 个字段</span>
+          </div>
+          <nz-spin [nzSpinning]="columnsLoading">
+            @if (schemaColumns.length > 0) {
+              <div class="schema-list">
+                @for (column of schemaColumns; track column.name) {
+                  <div class="schema-row">
+                    <div>
+                      <strong>{{ column.name }}</strong>
+                      @if (column.comment) {
+                        <span>{{ column.comment }}</span>
+                      }
+                    </div>
+                    <em>{{ column.databaseType }}</em>
+                    @if (column.primaryKey) {
+                      <code>PK</code>
+                    }
+                    @if (!column.nullable) {
+                      <code>NN</code>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="empty-state">选择数据表后读取字段结构。</div>
+            }
+          </nz-spin>
+        </nz-card>
+
+        <nz-card class="inspector-card" [nzBordered]="false">
+          <div class="card-heading">
+            <h3>数据预览</h3>
+            <span>{{ previewRows.length }} 行</span>
+          </div>
+          @if (previewRows.length > 0) {
+            <div class="preview-table-wrap">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    @for (column of previewColumns; track column) {
+                      <th>{{ column }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of previewRows; track $index) {
+                    <tr>
+                      @for (column of previewColumns; track column) {
+                        <td>{{ cellText(row[column]) }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">点击预览数据查看样例行。</div>
+          }
+        </nz-card>
+      </div>
+    </ng-container>
+  </nz-drawer>
 </section>

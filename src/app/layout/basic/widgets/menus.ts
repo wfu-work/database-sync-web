@@ -39,17 +39,36 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
             <i nz-icon nzType="home"></i>
             <span>工作台</span>
           </li>
-          <li nz-menu-item nzMatchRouter routerLink="/datasources/list">
-            <i nz-icon nzType="database"></i>
-            <span>数据源管理</span>
+          <li nz-submenu nzTitle="数据源管理" nzIcon="database">
+            <ul>
+              <li nz-menu-item nzMatchRouter routerLink="/datasources/list">
+                <span>数据源列表</span>
+              </li>
+              <li nz-menu-item nzMatchRouter routerLink="/datasources/create">
+                <span>新建数据源</span>
+              </li>
+            </ul>
           </li>
           <li nz-submenu nzTitle="同步管理" nzIcon="sync">
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/sync/tasks/list">
                 <span>同步任务</span>
               </li>
+              <li nz-menu-item nzMatchRouter routerLink="/sync/tasks/create">
+                <span>新建任务</span>
+              </li>
               <li nz-menu-item nzMatchRouter routerLink="/sync/runs/list">
                 <span>同步历史</span>
+              </li>
+            </ul>
+          </li>
+          <li nz-submenu nzTitle="数据库备份" nzIcon="hdd">
+            <ul>
+              <li nz-menu-item nzMatchRouter routerLink="/backups/history">
+                <span>备份历史</span>
+              </li>
+              <li nz-menu-item nzMatchRouter routerLink="/backups/create">
+                <span>新建备份</span>
               </li>
             </ul>
           </li>

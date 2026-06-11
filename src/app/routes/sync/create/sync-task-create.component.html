@@ -1,0 +1,310 @@
+<section class="sync-task-create-page">
+  <div class="page-heading">
+    <title-label title="新建任务" description="配置源表、目标表、同步模式、字段映射和写入策略。" />
+  </div>
+
+  <div class="create-layout">
+    <nz-card class="form-card" [nzBordered]="false">
+      <div class="form-title">
+        <h2>新建同步任务</h2>
+      </div>
+
+      <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+        <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+          <sv label="任务名称 *" [col]="2">
+            <input
+              nz-input
+              formControlName="name"
+              placeholder="例如：MySQL 设备数据同步到 TDengine"
+            />
+          </sv>
+
+          <sv label="源数据源 *">
+            <nz-select
+              formControlName="sourceGuid"
+              nzShowSearch
+              (ngModelChange)="onSourceDataSourceChange($event)"
+            >
+              @for (item of dataSources; track item.guid) {
+                <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+              }
+            </nz-select>
+          </sv>
+
+          <sv label="目标数据源 *">
+            <nz-select
+              formControlName="targetGuid"
+              nzShowSearch
+              (ngModelChange)="onTargetDataSourceChange($event)"
+            >
+              @for (item of dataSources; track item.guid) {
+                <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+              }
+            </nz-select>
+          </sv>
+
+          <sv label="源表 *">
+            <span class="field-action">
+              <input
+                nz-input
+                formControlName="sourceTable"
+                list="create-source-table-options"
+                placeholder="sensor_data"
+                (change)="onSourceTableChange(form.controls.sourceTable.value)"
+              />
+              <button
+                nz-button
+                type="button"
+                [nzLoading]="sourceTableLoading"
+                [disabled]="!form.controls.sourceGuid.value"
+                (click)="refreshSourceTables()"
+              >
+                <i nz-icon nzType="reload"></i>
+              </button>
+            </span>
+            <datalist id="create-source-table-options">
+              @for (table of sourceTables; track table.name) {
+                <option [value]="table.name">{{ table.comment || table.type }}</option>
+              }
+            </datalist>
+            <span class="metadata-line" [class.loading]="sourceColumnLoading">
+              源字段：{{ columnSummary(sourceColumns) }}
+            </span>
+          </sv>
+
+          <sv label="目标表 *">
+            <span class="field-action">
+              <input
+                nz-input
+                formControlName="targetTable"
+                list="create-target-table-options"
+                placeholder="sensor_data"
+                (change)="onTargetTableChange(form.controls.targetTable.value)"
+              />
+              <button
+                nz-button
+                type="button"
+                [nzLoading]="targetTableLoading"
+                [disabled]="!form.controls.targetGuid.value"
+                (click)="refreshTargetTables()"
+              >
+                <i nz-icon nzType="reload"></i>
+              </button>
+            </span>
+            <datalist id="create-target-table-options">
+              @for (table of targetTables; track table.name) {
+                <option [value]="table.name">{{ table.comment || table.type }}</option>
+              }
+            </datalist>
+            <span class="metadata-line" [class.loading]="targetColumnLoading">
+              目标字段：{{ columnSummary(targetColumns) }}
+            </span>
+          </sv>
+        </sv-container>
+
+        <sv-container class="form-sv" layout="vertical" [col]="3" [gutter]="16" noColon>
+          <sv label="模式 *">
+            <nz-select formControlName="mode">
+              <nz-option nzValue="full" nzLabel="全量同步" />
+              <nz-option nzValue="incremental" nzLabel="增量同步" />
+            </nz-select>
+          </sv>
+
+          <sv label="批次大小 *">
+            <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
+          </sv>
+
+          <sv label="写入模式 *">
+            <nz-select formControlName="writeMode">
+              <nz-option nzValue="insert" nzLabel="insert" />
+              <nz-option nzValue="upsert" nzLabel="upsert" />
+              <nz-option nzValue="replace" nzLabel="replace" />
+            </nz-select>
+          </sv>
+        </sv-container>
+
+        <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+          <sv label="游标字段">
+            <input
+              nz-input
+              formControlName="cursorField"
+              list="create-source-column-options"
+              placeholder="增量模式必填，例如 id"
+            />
+            <datalist id="create-source-column-options">
+              @for (column of sourceColumns; track column.name) {
+                <option [value]="column.name">{{ column.databaseType }}</option>
+              }
+            </datalist>
+          </sv>
+
+          <sv label="当前游标值">
+            <input nz-input formControlName="cursorValue" placeholder="可留空" />
+          </sv>
+
+          <sv label="冲突字段">
+            <input nz-input formControlName="conflictKeys" placeholder="upsert 时使用，逗号分隔" />
+          </sv>
+
+          <sv label="状态">
+            <nz-select formControlName="status">
+              <nz-option [nzValue]="1" nzLabel="启用" />
+              <nz-option [nzValue]="0" nzLabel="禁用" />
+            </nz-select>
+          </sv>
+
+          <sv label="源表过滤条件" [col]="2">
+            <textarea
+              nz-input
+              formControlName="whereClause"
+              rows="2"
+              placeholder="例如：deleted = 0"
+            ></textarea>
+          </sv>
+
+          <sv label="定时执行">
+            <nz-select formControlName="scheduleOn">
+              <nz-option [nzValue]="0" nzLabel="手动执行" />
+              <nz-option [nzValue]="1" nzLabel="启用定时" />
+            </nz-select>
+          </sv>
+
+          <sv label="Cron 表达式">
+            <input nz-input formControlName="cronExpr" placeholder="例如：0 */5 * * * *" />
+          </sv>
+
+          <sv label="字段映射 JSON *" [col]="2">
+            <span class="field-toolbar">
+              <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
+                插入示例
+              </button>
+              <button
+                nz-button
+                nzType="link"
+                nzSize="small"
+                type="button"
+                (click)="generateSameNameMapping()"
+              >
+                同名字段生成
+              </button>
+            </span>
+            <textarea
+              nz-input
+              formControlName="fieldsText"
+              rows="10"
+              spellcheck="false"
+              [class.field-invalid]="fieldError"
+            ></textarea>
+            @if (fieldError) {
+              <span class="field-error">{{ fieldError }}</span>
+            }
+          </sv>
+
+          <sv label="备注" [col]="2">
+            <textarea nz-input formControlName="remark" rows="2"></textarea>
+          </sv>
+        </sv-container>
+
+        @if (formError) {
+          <nz-alert class="form-error" nzType="warning" nzShowIcon [nzMessage]="formError" />
+        }
+
+        <div class="form-actions">
+          <button nz-button type="button" (click)="resetForm()">重置</button>
+          <button nz-button type="button" [nzLoading]="validationLoading" (click)="validateForm()">
+            校验配置
+          </button>
+          <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+            创建任务
+          </button>
+        </div>
+      </form>
+
+      @if (validationResult) {
+        <div class="validation-panel" [class.validation-ok]="validationResult.valid">
+          <nz-alert
+            [nzType]="validationResult.valid ? 'success' : 'warning'"
+            nzShowIcon
+            [nzMessage]="validationResult.valid ? '配置校验通过' : '配置校验未通过'"
+          />
+          <div class="validation-grid">
+            <div>
+              <span>预计源数据</span>
+              <strong>{{ validationResult.estimatedSourceCount || 0 }}</strong>
+            </div>
+            <div>
+              <span>字段映射</span>
+              <strong>{{ validationResult.fieldMappingRowCount || 0 }}</strong>
+            </div>
+            <div>
+              <span>源字段</span>
+              <strong>{{ validationResult.sourceColumns.length || 0 }}</strong>
+            </div>
+            <div>
+              <span>目标字段</span>
+              <strong>{{ validationResult.targetColumns.length || 0 }}</strong>
+            </div>
+          </div>
+          @if (validationResult.errors.length) {
+            <ul class="validation-errors">
+              @for (error of validationResult.errors; track error) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          }
+          @if (validationResult.missingSourceFields.length) {
+            <div class="missing-fields">
+              <strong>缺失源字段</strong>
+              @for (field of validationResult.missingSourceFields; track field) {
+                <code>{{ field }}</code>
+              }
+            </div>
+          }
+          @if (validationResult.missingTargetFields.length) {
+            <div class="missing-fields">
+              <strong>缺失目标字段</strong>
+              @for (field of validationResult.missingTargetFields; track field) {
+                <code>{{ field }}</code>
+              }
+            </div>
+          }
+        </div>
+      }
+    </nz-card>
+
+    <aside class="context-panel">
+      <section class="context-block context-primary">
+        <div class="context-icon"><i nz-icon nzType="sync"></i></div>
+        <h3>同步路径</h3>
+        <div class="flow-line">
+          <span>源表</span>
+          <i nz-icon nzType="arrow-right"></i>
+          <span>字段映射</span>
+          <i nz-icon nzType="arrow-right"></i>
+          <span>目标表</span>
+        </div>
+      </section>
+
+      <section class="context-block">
+        <h3>策略要点</h3>
+        <ul class="context-list">
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>全量适合初始化，增量适合持续同步。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>增量任务建议设置稳定递增的游标字段。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>upsert 需要冲突字段与目标表索引匹配。</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="context-block">
+        <h3>映射示例</h3>
+        <div class="code-line">&#123;"source":"created_at","target":"ts"&#125;</div>
+        <div class="code-line">&#123;"target":"source_type","default":"mysql"&#125;</div>
+      </section>
+    </aside>
+  </div>
+</section>
