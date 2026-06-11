@@ -1,0 +1,82 @@
+<section class="detail-page">
+  <div class="page-header">
+    <title-label title="凭证详情" description="查看客户端接入身份、账号归属和可复制的签名凭证。" />
+    <div class="header-actions">
+      <button nz-button (click)="back()">
+        <i nz-icon nzType="arrow-left"></i>
+        返回
+      </button>
+      <button nz-button nzType="primary" (click)="edit()">
+        <i nz-icon nzType="edit"></i>
+        编辑
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="detail-card" [nzBordered]="false" [nzLoading]="loading">
+    @if (client) {
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>名称</span>
+          <strong>{{ client.name || '-' }}</strong>
+        </div>
+        <div class="detail-item">
+          <span>账号</span>
+          <strong>{{ client.accountName || '-' }}</strong>
+          <button type="button" class="copy-text" (click)="copy(client.accountGuid, '账号 GUID')">
+            {{ client.accountGuid }}
+          </button>
+        </div>
+        <div class="detail-item">
+          <span>类型</span>
+          <strong>{{ client.clientType }}</strong>
+        </div>
+        <div class="detail-item">
+          <span>平台 / 版本</span>
+          <strong>{{ client.platform || '-' }}</strong>
+          <small>{{ client.version || '-' }}</small>
+        </div>
+        <div class="detail-item">
+          <span>最近在线</span>
+          <strong>{{ formatTime(client.lastSeenAt) }}</strong>
+          <small>{{ client.lastIp || '-' }}</small>
+        </div>
+        <div class="detail-item">
+          <span>创建时间</span>
+          <strong>{{ formatTime(client.createTime) }}</strong>
+        </div>
+      </div>
+
+      <div class="credential-panel">
+        <div class="credential-row">
+          <span>clientId</span>
+          <code>{{ client.clientId }}</code>
+          <button nz-button nzSize="small" (click)="copy(client.clientId, 'clientId')">复制</button>
+        </div>
+
+        <div class="credential-row">
+          <span>clientSecret</span>
+          <code>{{ maskedSecret() }}</code>
+          <button
+            nz-button
+            nzSize="small"
+            nz-tooltip
+            [nzTooltipTitle]="secretVisible ? '隐藏' : '显示'"
+            (click)="secretVisible = !secretVisible"
+          >
+            <i nz-icon [nzType]="secretVisible ? 'eye-invisible' : 'eye'"></i>
+          </button>
+          <button nz-button nzSize="small" (click)="copy(client.clientSecret, 'clientSecret')">
+            复制
+          </button>
+        </div>
+
+        <div class="sample-box">
+          <div class="sample-title">WebSocket 接入示例</div>
+          <code>{{ sampleUrl() }}</code>
+          <button nz-button nzSize="small" (click)="copy(sampleUrl(), '接入示例')">复制示例</button>
+        </div>
+      </div>
+    }
+  </nz-card>
+</section>

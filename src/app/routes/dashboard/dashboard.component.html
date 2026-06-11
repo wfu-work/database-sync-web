@@ -1,0 +1,76 @@
+<section class="dashboard-page">
+  <title-label title="工作台" description="总览数据源、同步任务、执行历史与失败风险。" />
+
+  <div class="dashboard-panels">
+    <app-panel
+      icon="database"
+      title="数据源"
+      [value]="dataSourceValue"
+      trend="连接配置"
+      trendType="neutral"
+    />
+    <app-panel
+      icon="sync"
+      title="同步任务"
+      [value]="taskValue"
+      trend="可执行"
+      trendType="neutral"
+    />
+    <app-panel
+      icon="history"
+      title="执行记录"
+      [value]="runValue"
+      trend="历史"
+      trendType="neutral"
+    />
+    <app-panel
+      icon="alert"
+      title="失败运行"
+      [value]="failedValue"
+      trend="待处理"
+      [trendType]="failedRunTotal > 0 ? 'down' : 'neutral'"
+    />
+  </div>
+
+  <div class="dashboard-widgets">
+    <nz-card class="dashboard-card" [nzBordered]="false">
+      <div class="card-heading">
+        <h2>最近执行</h2>
+        <a nz-button nzType="link" routerLink="/sync/runs/list">查看全部</a>
+      </div>
+      <div class="run-list">
+        @for (item of recentRuns; track item.guid) {
+          <a class="run-row" [routerLink]="['/sync/runs', item.guid]">
+            <div>
+              <strong>{{ item.taskName || '-' }}</strong>
+              <span>{{ formatTime(item.startTime) }}</span>
+            </div>
+            <div class="run-progress">
+              <nz-progress [nzPercent]="percent(item)" [nzShowInfo]="false" />
+              <span>{{ statusLabel(item.status) }}</span>
+            </div>
+          </a>
+        } @empty {
+          <div class="empty-state">暂无执行记录，先创建同步任务并手动执行。</div>
+        }
+      </div>
+    </nz-card>
+
+    <nz-card class="dashboard-card" [nzBordered]="false">
+      <div class="card-heading">
+        <h2>运行检查</h2>
+      </div>
+      <div class="rule-list">
+        @for (item of rules; track item.name) {
+          <div class="rule-row" [class.rule-warning]="item.tone === 'warning'">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <span>{{ item.flow }}</span>
+            </div>
+            <em>{{ item.status }}</em>
+          </div>
+        }
+      </div>
+    </nz-card>
+  </div>
+</section>

@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.run-detail-page {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.page-heading,
+.errors-heading,
+.query-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-card,
+.detail-card {
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+}
+
+.summary-card span,
+.detail-grid span {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #667085;
+}
+
+.summary-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1f2a3d;
+}
+
+.detail-card-title {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.detail-card-title h2,
+.errors-heading h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f2a3d;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.detail-grid > div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.detail-grid strong,
+.detail-grid code,
+.mono,
+pre,
+.detail-card-title code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.detail-grid strong,
+.detail-grid code {
+  overflow: hidden;
+  display: block;
+  margin-top: 6px;
+  color: #1f2a3d;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-alert {
+  margin-top: 16px;
+}
+
+.query-bar {
+  justify-content: flex-end;
+}
+
+.query-bar nz-input-wrapper {
+  width: min(360px, 100%);
+}
+
+.error-text {
+  color: #b42318;
+}
+
+pre {
+  overflow: auto;
+  max-width: 420px;
+  max-height: 160px;
+  margin: 0;
+  font-size: 12px;
+  color: #1f2a3d;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1199px) {
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .page-heading,
+  .errors-heading,
+  .query-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

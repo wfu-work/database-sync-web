@@ -1,0 +1,152 @@
+:host {
+  display: block;
+}
+
+.guide-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.guide-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.guide-step,
+.guide-card {
+  min-width: 0;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.guide-step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+}
+
+.step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--nm-primary);
+}
+
+.step-body {
+  min-width: 0;
+}
+
+.step-body h2,
+.guide-card h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #1d2b3f;
+}
+
+.step-body p {
+  min-height: 66px;
+  margin: 8px 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667385;
+}
+
+.field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.field-list code,
+.connect-grid code {
+  overflow: hidden;
+  display: inline-flex;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #203045;
+  text-overflow: ellipsis;
+  background: #f4f7fb;
+}
+
+.guide-card {
+  padding: 20px;
+}
+
+.connect-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.connect-grid > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.connect-grid span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #667385;
+}
+
+.check-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #526174;
+}
+
+.check-list i {
+  margin-top: 4px;
+  color: var(--nm-primary);
+}
+
+@media (max-width: 1199px) {
+  .guide-flow,
+  .connect-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .guide-flow,
+  .connect-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .step-body p {
+    min-height: 0;
+  }
+}

@@ -1,0 +1,98 @@
+<h3>创建客户端凭证</h3>
+<form nz-form [formGroup]="form" (ngSubmit)="submit()" role="form">
+  @if (error) {
+    <nz-alert [nzType]="'error'" [nzMessage]="error" [nzShowIcon]="true" class="mb-lg" />
+  }
+
+  <nz-alert
+    nzType="info"
+    nzShowIcon
+    nzMessage="用于首次接入 Relay。创建成功后只展示一次 Client Secret，请及时保存。"
+    class="mb-lg"
+  />
+
+  <nz-form-item>
+    <nz-form-control nzErrorTip="请输入账号名称">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="team" />
+        <input
+          nz-input
+          nzSize="large"
+          formControlName="accountName"
+          placeholder="账号名称"
+          autocomplete="organization"
+        />
+      </nz-input-wrapper>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-control>
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="idcard" />
+        <input
+          nz-input
+          nzSize="large"
+          formControlName="accountGuid"
+          placeholder="已有账号 GUID，可留空创建新账号"
+          autocomplete="off"
+        />
+      </nz-input-wrapper>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-control nzErrorTip="请选择客户端类型">
+      <nz-select nzSize="large" formControlName="clientType">
+        <nz-option nzValue="bridge" nzLabel="Bridge" />
+        <nz-option nzValue="app" nzLabel="App" />
+      </nz-select>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-control nzErrorTip="请输入客户端名称">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="api" />
+        <input nz-input nzSize="large" formControlName="name" placeholder="客户端名称" />
+      </nz-input-wrapper>
+    </nz-form-control>
+  </nz-form-item>
+
+  <div nz-row [nzGutter]="12">
+    <div nz-col [nzSpan]="12">
+      <nz-form-item>
+        <nz-form-control>
+          <nz-input-wrapper>
+            <nz-icon nzInputPrefix nzType="desktop" />
+            <input nz-input nzSize="large" formControlName="platform" placeholder="平台" />
+          </nz-input-wrapper>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+    <div nz-col [nzSpan]="12">
+      <nz-form-item>
+        <nz-form-control>
+          <nz-input-wrapper>
+            <nz-icon nzInputPrefix nzType="branches" />
+            <input nz-input nzSize="large" formControlName="version" placeholder="版本" />
+          </nz-input-wrapper>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+  </div>
+
+  <nz-form-item>
+    <button
+      nz-button
+      nzType="primary"
+      nzSize="large"
+      type="submit"
+      [nzLoading]="loading"
+      class="submit"
+    >
+      创建凭证
+    </button>
+    <a class="login" routerLink="/passport/login">返回登录</a>
+  </nz-form-item>
+</form>

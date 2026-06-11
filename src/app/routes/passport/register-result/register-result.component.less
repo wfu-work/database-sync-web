@@ -1,0 +1,38 @@
+.credential-panel {
+  display: grid;
+  gap: 10px;
+  width: min(680px, 100%);
+  margin: 0 auto 22px;
+  text-align: left;
+}
+
+.credential-row {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.credential-row span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #526174;
+}
+
+.credential-row code {
+  overflow: auto;
+  display: block;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #203045;
+  background: #f5f7fb;
+}
+
+@media (max-width: 767px) {
+  .credential-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,24 @@
+import { Routes } from '@angular/router';
+
+import { SyncRunDetailComponent } from './runs/sync-run-detail.component';
+import { SyncRunListComponent } from './runs/sync-run-list.component';
+import { SyncTaskListComponent } from './tasks/sync-task-list.component';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'tasks/list', pathMatch: 'full' },
+  {
+    path: 'tasks/list',
+    component: SyncTaskListComponent,
+    data: { title: '同步任务' },
+  },
+  {
+    path: 'runs/list',
+    component: SyncRunListComponent,
+    data: { title: '同步历史' },
+  },
+  {
+    path: 'runs/:guid',
+    component: SyncRunDetailComponent,
+    data: { title: '运行详情' },
+  },
+];

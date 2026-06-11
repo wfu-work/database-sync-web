@@ -1,0 +1,105 @@
+<section class="run-list-page">
+  <div class="page-heading">
+    <title-label title="同步历史" description="查看每次任务执行的状态、处理量、耗时和最后错误。" />
+    <div class="page-actions">
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="query-bar">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="search" />
+        <input
+          nz-input
+          [(ngModel)]="q.keyword"
+          placeholder="搜索任务名、运行 GUID 或错误信息"
+          (keydown.enter)="search()"
+        />
+      </nz-input-wrapper>
+      <nz-select
+        [(ngModel)]="q.taskGuid"
+        nzPlaceHolder="任务"
+        nzShowSearch
+        (ngModelChange)="search()"
+      >
+        <nz-option nzValue="" nzLabel="全部任务" />
+        @for (task of tasks; track task.guid) {
+          <nz-option [nzValue]="task.guid" [nzLabel]="task.name" />
+        }
+      </nz-select>
+      <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+        <nz-option nzValue="" nzLabel="全部状态" />
+        <nz-option nzValue="pending" nzLabel="等待" />
+        <nz-option nzValue="running" nzLabel="运行中" />
+        <nz-option nzValue="success" nzLabel="成功" />
+        <nz-option nzValue="failed" nzLabel="失败" />
+        <nz-option nzValue="canceled" nzLabel="取消" />
+      </nz-select>
+      <button nz-button nzType="primary" (click)="search()">搜索</button>
+      <button nz-button (click)="resetQuery()">重置</button>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="runRender" let-item>
+        <div class="strong">{{ item.taskName || '-' }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+      </ng-template>
+
+      <ng-template st-row="statusRender" let-item>
+        <span class="status" [class]="statusClass(item.status)">
+          {{ statusLabel(item.status) }}
+        </span>
+        @if (item.lastError) {
+          <div class="muted error-text">{{ item.lastError }}</div>
+        }
+      </ng-template>
+
+      <ng-template st-row="progressRender" let-item>
+        <div class="progress-cell">
+          <nz-progress
+            [nzPercent]="percent(item)"
+            [nzStatus]="
+              item.status === 'failed'
+                ? 'exception'
+                : item.status === 'success'
+                  ? 'success'
+                  : 'active'
+            "
+          />
+        </div>
+      </ng-template>
+
+      <ng-template st-row="countRender" let-item>
+        <div>成功 {{ item.successCount || 0 }} / 失败 {{ item.failedCount || 0 }}</div>
+        <div class="muted">已处理 {{ item.processedCount || 0 }} / {{ item.totalCount || 0 }}</div>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        <div>{{ formatTime(item.startTime) }}</div>
+        <div class="muted">耗时 {{ duration(item.durationMs) }}</div>
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button nz-button nzType="link" [routerLink]="['/sync/runs', item.guid]">
+            <i nz-icon nzType="eye"></i>
+            详情
+          </button>
+        </div>
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

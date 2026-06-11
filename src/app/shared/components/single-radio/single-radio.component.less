@@ -1,0 +1,115 @@
+@import '@delon/theme/index';
+
+:host {
+  display: block;
+  margin-top: 1px;
+}
+
+.single-radio {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.single-radio__label {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #6e7f98;
+}
+
+.single-radio__group {
+  display: grid;
+  gap: 18px;
+}
+
+.single-radio__item {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 120px;
+  padding: 18px 14px;
+  border: 1px solid #e7ecf3;
+  border-radius: 18px;
+  color: #4a5872;
+  text-align: center;
+  background: linear-gradient(180deg, #f7f9fc 0%, #f3f6fa 100%);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: fade(@primary-color, 24%);
+  }
+
+  &.is-active {
+    border-color: fade(@primary-color, 28%);
+    color: #203049;
+    background:
+      radial-gradient(circle at top, fade(@primary-color, 10%), transparent 55%),
+      linear-gradient(180deg, #f2fff9 0%, #ecfbf4 100%);
+  }
+
+  &.is-disabled {
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.58;
+    box-shadow: none;
+  }
+}
+
+.single-radio__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  font-size: 30px;
+  color: #66758d;
+
+  img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+  }
+}
+
+.single-radio__item.is-active .single-radio__icon {
+  color: @primary-color;
+}
+
+.single-radio__text {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: inherit;
+}
+
+.single-radio__desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #8b98ad;
+}
+
+@media (max-width: 767px) {
+  .single-radio__group {
+    gap: 14px;
+  }
+
+  .single-radio__item {
+    min-height: 96px;
+    padding: 14px 10px;
+    border-radius: 16px;
+  }
+
+  .single-radio__text {
+    font-size: 15px;
+  }
+}

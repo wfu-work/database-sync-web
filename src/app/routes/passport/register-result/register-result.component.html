@@ -1,0 +1,40 @@
+<nz-result
+  nzStatus="success"
+  nzTitle="客户端凭证已创建"
+  [nzSubTitle]="'Client Secret 只展示一次，请在关闭页面前保存。'"
+>
+  <div nz-result-extra>
+    <div class="credential-panel">
+      <div class="credential-row">
+        <span>Client ID</span>
+        <code>{{ displayClientId }}</code>
+        <button nz-button nzSize="small" (click)="copy(displayClientId, 'Client ID')">复制</button>
+      </div>
+      @if (credential) {
+        <div class="credential-row">
+          <span>Client Secret</span>
+          <code>{{ credential.clientSecret }}</code>
+          <button nz-button nzSize="small" (click)="copy(credential.clientSecret, 'Client Secret')">
+            复制
+          </button>
+        </div>
+        <div class="credential-row">
+          <span>账号 GUID</span>
+          <code>{{ credential.accountGuid }}</code>
+          <button nz-button nzSize="small" (click)="copy(credential.accountGuid, '账号 GUID')">
+            复制
+          </button>
+        </div>
+        <div class="credential-row">
+          <span>客户端 GUID</span>
+          <code>{{ credential.clientGuid }}</code>
+          <button nz-button nzSize="small" (click)="copy(credential.clientGuid, '客户端 GUID')">
+            复制
+          </button>
+        </div>
+      }
+    </div>
+    <button routerLink="/passport/login" nz-button nzSize="large" nzType="primary">返回登录</button>
+    <button routerLink="/clients/list" nz-button nzSize="large">进入凭证列表</button>
+  </div>
+</nz-result>

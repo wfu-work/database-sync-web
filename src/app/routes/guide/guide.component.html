@@ -1,0 +1,60 @@
+<section class="guide-page">
+  <title-label
+    title="使用指南"
+    description="按最小闭环完成数据源配置、任务映射、手动执行和失败排查。"
+  />
+
+  <div class="guide-flow">
+    @for (step of steps; track step.title; let i = $index) {
+      <article class="guide-step">
+        <div class="step-index">{{ i + 1 }}</div>
+        <div class="step-body">
+          <h2>{{ step.title }}</h2>
+          <p>{{ step.desc }}</p>
+          <div class="field-list">
+            @for (field of step.fields; track field) {
+              <code>{{ field }}</code>
+            }
+          </div>
+          @if (step.path) {
+            <a nz-button nzType="primary" [routerLink]="step.path">{{ step.action }}</a>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <h2>同步任务最小配置</h2>
+    <div class="connect-grid">
+      <div>
+        <span>同步模式</span>
+        <code>full / incremental</code>
+      </div>
+      <div>
+        <span>数据链路</span>
+        <code>sourceGuid → targetGuid</code>
+      </div>
+      <div>
+        <span>表映射</span>
+        <code>sourceTable → targetTable</code>
+      </div>
+      <div>
+        <span>字段映射</span>
+        <code>source / target / transform</code>
+      </div>
+    </div>
+  </nz-card>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <h2>注意事项</h2>
+    <ul class="check-list">
+      @for (item of checks; track item) {
+        <li>
+          <i nz-icon nzType="check-circle"></i>
+          <span>{{ item }}</span>
+        </li>
+      }
+    </ul>
+  </nz-card>
+</section>

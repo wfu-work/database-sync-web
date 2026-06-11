@@ -1,0 +1,122 @@
+<section class="run-detail-page">
+  <div class="page-heading">
+    <title-label
+      title="运行详情"
+      description="跟踪单次同步的处理进度、游标、错误和源数据快照。"
+      [showBack]="true"
+    />
+    <button nz-button (click)="refresh()">
+      <i nz-icon nzType="reload"></i>
+      刷新
+    </button>
+  </div>
+
+  <nz-spin [nzSpinning]="loading">
+    <div class="summary-grid">
+      <nz-card class="summary-card" [nzBordered]="false">
+        <span>状态</span>
+        <strong>{{ statusLabel(status) }}</strong>
+      </nz-card>
+      <nz-card class="summary-card" [nzBordered]="false">
+        <span>成功 / 失败</span>
+        <strong
+          >{{ progress?.successCount ?? run?.successCount ?? 0 }} /
+          {{ progress?.failedCount ?? run?.failedCount ?? 0 }}</strong
+        >
+      </nz-card>
+      <nz-card class="summary-card" [nzBordered]="false">
+        <span>已处理 / 总数</span>
+        <strong
+          >{{ progress?.processedCount ?? run?.processedCount ?? 0 }} /
+          {{ progress?.totalCount ?? run?.totalCount ?? 0 }}</strong
+        >
+      </nz-card>
+      <nz-card class="summary-card" [nzBordered]="false">
+        <span>耗时</span>
+        <strong>{{ duration(run?.durationMs) }}</strong>
+      </nz-card>
+    </div>
+
+    <nz-card class="detail-card" [nzBordered]="false">
+      <div class="detail-card-title">
+        <h2>{{ run?.taskName || '同步运行' }}</h2>
+        <code>{{ guid }}</code>
+      </div>
+      <nz-progress [nzPercent]="percent" [nzStatus]="progressStatus" />
+      <div class="detail-grid">
+        <div>
+          <span>任务 GUID</span>
+          <code>{{ run?.taskGuid || progress?.taskGuid || '-' }}</code>
+        </div>
+        <div>
+          <span>开始时间</span>
+          <strong>{{ formatTime(run?.startTime) }}</strong>
+        </div>
+        <div>
+          <span>结束时间</span>
+          <strong>{{ formatTime(run?.endTime) }}</strong>
+        </div>
+        <div>
+          <span>游标</span>
+          <strong
+            >{{ progress?.cursorStart || run?.cursorStart || '-' }} →
+            {{ progress?.cursorEnd || run?.cursorEnd || '-' }}</strong
+          >
+        </div>
+      </div>
+      @if (progress?.lastError || run?.lastError) {
+        <nz-alert
+          class="error-alert"
+          nzType="error"
+          nzShowIcon
+          [nzMessage]="progress?.lastError || run?.lastError || ''"
+        />
+      }
+    </nz-card>
+  </nz-spin>
+
+  <nz-card class="detail-card" [nzBordered]="false">
+    <div class="errors-heading">
+      <h2>失败明细</h2>
+      <div class="query-bar">
+        <nz-input-wrapper>
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索源主键或错误原因"
+            (keydown.enter)="searchErrors()"
+          />
+        </nz-input-wrapper>
+        <button nz-button nzType="primary" (click)="searchErrors()">搜索</button>
+      </div>
+    </div>
+
+    <st
+      [data]="errors"
+      [columns]="errorColumns"
+      [loading]="errorsLoading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="errorsTotal"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="errorTableChange($event)"
+    >
+      <ng-template st-row="sourcePkRender" let-item>
+        <span class="mono">{{ item.sourcePk || '-' }}</span>
+      </ng-template>
+
+      <ng-template st-row="errorRender" let-item>
+        <span class="error-text">{{ item.errorMessage || '-' }}</span>
+      </ng-template>
+
+      <ng-template st-row="sourceDataRender" let-item>
+        <pre>{{ prettyJson(item.sourceData) }}</pre>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        {{ formatTime(item.createTime) }}
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

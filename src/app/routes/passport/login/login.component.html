@@ -1,0 +1,38 @@
+<form nz-form [formGroup]="form" (ngSubmit)="submit()" role="form">
+  <h3>管理员登录</h3>
+  @if (error) {
+    <nz-alert [nzType]="'error'" [nzMessage]="error" [nzShowIcon]="true" class="mb-lg" />
+  }
+  <nz-form-item>
+    <nz-form-control nzErrorTip="请输入管理员用户名">
+      <nz-input-wrapper>
+        <nz-icon nzInputPrefix nzType="user" />
+        <input
+          nz-input
+          nzSize="large"
+          formControlName="username"
+          autocomplete="username"
+          placeholder="管理员用户名"
+        />
+      </nz-input-wrapper>
+    </nz-form-control>
+  </nz-form-item>
+  <nz-form-item>
+    <nz-form-control nzErrorTip="请输入登录密码">
+      <app-password-input formControlName="password" />
+    </nz-form-control>
+  </nz-form-item>
+  <nz-form-item>
+    <nz-col [nzSpan]="12">
+      <label nz-checkbox formControlName="remember">保持登录状态</label>
+    </nz-col>
+    <nz-col [nzSpan]="12" class="text-right">
+      <a class="forgot" routerLink="/passport/register">创建客户端凭证</a>
+    </nz-col>
+  </nz-form-item>
+  <nz-form-item>
+    <button nz-button type="submit" nzType="primary" nzSize="large" [nzLoading]="loading" nzBlock>
+      进入控制台
+    </button>
+  </nz-form-item>
+</form>
