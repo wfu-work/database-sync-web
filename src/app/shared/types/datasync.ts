@@ -339,6 +339,9 @@ export interface SyncTaskPreviewResult {
   sourceRows: MapperRow[];
   mappedRows: MapperRow[];
   count: number;
+  sampleWindowStart?: string;
+  sampleWindowEnd?: string;
+  scannedDays?: number;
 }
 
 export interface ScheduleItem {

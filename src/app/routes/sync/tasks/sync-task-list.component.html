@@ -194,8 +194,22 @@
       <nz-spin [nzSpinning]="previewLoading">
         @if (previewResult) {
           <div class="preview-summary">
-            <strong>{{ previewResult.count || 0 }}</strong>
-            <span>行样例数据</span>
+            <div>
+              <strong>{{ previewResult.count || 0 }}</strong>
+              <span>行样例数据</span>
+            </div>
+            @if (previewResult.scannedDays) {
+              <div class="preview-meta">
+                <span>扫描天数</span>
+                <strong>{{ previewResult.scannedDays }}</strong>
+              </div>
+            }
+            @if (previewResult.sampleWindowStart && previewResult.sampleWindowEnd) {
+              <div class="preview-meta preview-window">
+                <span>样例时间窗口</span>
+                <code>{{ previewWindowText() }}</code>
+              </div>
+            }
           </div>
           <div class="preview-sections">
             <section class="preview-section">
@@ -222,7 +236,7 @@
                   </table>
                 </div>
               } @else {
-                <div class="empty-state">没有源数据样例。</div>
+                <div class="empty-state">已按配置时间范围向前扫描，未找到源数据样例。</div>
               }
             </section>
 
@@ -250,7 +264,7 @@
                   </table>
                 </div>
               } @else {
-                <div class="empty-state">没有映射结果样例。</div>
+                <div class="empty-state">没有可生成映射结果的样例。</div>
               }
             </section>
           </div>

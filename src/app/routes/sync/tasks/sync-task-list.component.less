@@ -320,9 +320,21 @@ textarea[formControlName='fieldsText'] {
 
 .preview-summary {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+
+.preview-summary > div {
+  display: flex;
   gap: 8px;
   align-items: baseline;
-  margin-bottom: 14px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .preview-summary strong {
@@ -332,6 +344,27 @@ textarea[formControlName='fieldsText'] {
 
 .preview-summary span {
   color: #6b778c;
+}
+
+.preview-meta strong {
+  font-size: 16px;
+}
+
+.preview-window {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.preview-window code {
+  overflow: hidden;
+  display: block;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .preview-sections {

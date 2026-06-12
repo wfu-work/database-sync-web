@@ -295,6 +295,11 @@ export class SyncTaskListComponent implements OnInit {
     return String(value);
   }
 
+  protected previewWindowText(): string {
+    if (!this.previewResult?.sampleWindowStart || !this.previewResult.sampleWindowEnd) return '-';
+    return `${this.previewResult.sampleWindowStart} ~ ${this.previewResult.sampleWindowEnd}`;
+  }
+
   protected formatTime(value?: number): string {
     if (!value) return '-';
     const date = new Date(value);
