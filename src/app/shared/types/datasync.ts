@@ -3,6 +3,8 @@ export type SyncMode = 'full' | 'incremental';
 export type WriteMode = 'insert' | 'upsert' | 'replace';
 export type RunStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
 export type BackupStatus = 'pending' | 'running' | 'success' | 'failed';
+export type DataSourceConnectionStatus = 'unknown' | 'checking' | 'connected' | 'failed';
+export type EventNotificationLevel = 'info' | 'warning' | 'error';
 export type MapperRow = Record<string, unknown>;
 
 export interface BaseEntity {
@@ -21,6 +23,9 @@ export interface DataSource extends BaseEntity {
   database: string;
   params: string;
   remark: string;
+  connectionStatus?: DataSourceConnectionStatus | string;
+  connectionCheckedAt?: number;
+  connectionError?: string;
   status: number;
 }
 
@@ -192,6 +197,12 @@ export interface DatabaseBackup extends BaseEntity {
   format: string;
   status: BackupStatus | string;
   totalTables: number;
+  finishedTables: number;
+  currentTable: string;
+  currentRows: number;
+  currentTotal: number;
+  currentBatch: number;
+  currentStarted: number;
   totalRows: number;
   fileName: string;
   filePath: string;
@@ -208,4 +219,16 @@ export interface StartDatabaseBackupPayload {
   tables?: string[];
   batchSize?: number;
   remark?: string;
+}
+
+export interface EventNotification extends BaseEntity {
+  type: string;
+  level: EventNotificationLevel | string;
+  title: string;
+  content: string;
+  sourceType: string;
+  sourceGuid: string;
+  sourceName: string;
+  read: number;
+  eventTime: number;
 }

@@ -54,16 +54,30 @@
       </ng-template>
 
       <ng-template st-row="connectionRender" let-item>
-        <div>
+        <div class="connection-main">
           <span class="pill">{{ sourceTypeLabel(item.type) }}</span>
-          <span class="mono">{{ item.host }}:{{ item.port }}</span>
+          <span class="mono truncate-text">{{ item.host }}:{{ item.port }}</span>
         </div>
-        <div class="muted">{{ item.database || '-' }}</div>
+        <div class="muted truncate-text">{{ item.database || '-' }}</div>
       </ng-template>
 
       <ng-template st-row="statusRender" let-item>
         <span class="status" [class.status-off]="item.status !== 1">
           {{ statusLabel(item.status) }}
+        </span>
+      </ng-template>
+
+      <ng-template st-row="connectionStatusRender" let-item>
+        <span
+          class="connection-status"
+          [class.connection-status-checking]="isConnectionStatus(item, 'checking')"
+          [class.connection-status-ok]="isConnectionStatus(item, 'connected')"
+          [class.connection-status-failed]="isConnectionStatus(item, 'failed')"
+          [class.connection-status-unknown]="isConnectionStatus(item, 'unknown')"
+          nz-tooltip
+          [nzTooltipTitle]="connectionStatusTooltip(item)"
+        >
+          {{ connectionStatusLabel(item.connectionStatus) }}
         </span>
       </ng-template>
 
@@ -73,26 +87,47 @@
 
       <ng-template st-row="actionsRender" let-item>
         <div class="action-col">
-          <button nz-button nzType="link" (click)="edit(item)">
+          <button
+            nz-button
+            nzType="link"
+            class="action-button"
+            aria-label="编辑"
+            (click)="edit(item)"
+          >
             <i nz-icon nzType="edit"></i>
-            编辑
+            <span>编辑</span>
           </button>
           <button
             nz-button
             nzType="link"
+            class="action-button"
+            aria-label="测试连接"
             [nzLoading]="testingGuid === item.guid"
             (click)="test(item)"
           >
             <i nz-icon nzType="link"></i>
-            测试
+            <span>测试</span>
           </button>
-          <button nz-button nzType="link" (click)="openInspector(item)">
+          <button
+            nz-button
+            nzType="link"
+            class="action-button"
+            aria-label="表预览"
+            (click)="openInspector(item)"
+          >
             <i nz-icon nzType="table"></i>
-            表
+            <span>预览</span>
           </button>
-          <button nz-button nzType="link" nzDanger (click)="remove(item)">
+          <button
+            nz-button
+            nzType="link"
+            class="action-button"
+            aria-label="删除"
+            nzDanger
+            (click)="remove(item)"
+          >
             <i nz-icon nzType="delete"></i>
-            删除
+            <span>删除</span>
           </button>
         </div>
       </ng-template>
@@ -108,57 +143,42 @@
     <ng-container *nzDrawerContent>
       <div class="inspector">
         <nz-spin [nzSpinning]="tableLoading">
-          <form
-            nz-form
-            [formGroup]="previewForm"
-            nzLayout="vertical"
-            class="preview-form"
-            (ngSubmit)="previewData()"
-          >
-            <div class="preview-grid">
-              <nz-form-item>
-                <nz-form-label nzRequired>数据表</nz-form-label>
-                <nz-form-control nzErrorTip="请选择数据表">
-                  <nz-select
-                    formControlName="table"
-                    nzShowSearch
-                    nzPlaceHolder="选择数据表"
-                    (ngModelChange)="onTableChange($event)"
-                  >
-                    @for (table of tables; track table.name) {
-                      <nz-option
-                        [nzValue]="table.name"
-                        [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
-                      />
-                    }
-                  </nz-select>
-                </nz-form-control>
-              </nz-form-item>
+          <form [formGroup]="previewForm" class="preview-form" (ngSubmit)="previewData()">
+            <sv-container class="preview-sv" layout="vertical" [col]="6" [gutter]="12" noColon>
+              <sv label="数据表 *" [col]="4">
+                <nz-select
+                  formControlName="table"
+                  nzShowSearch
+                  nzPlaceHolder="选择数据表"
+                  (ngModelChange)="onTableChange($event)"
+                >
+                  @for (table of tables; track table.name) {
+                    <nz-option
+                      [nzValue]="table.name"
+                      [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+                    />
+                  }
+                </nz-select>
+              </sv>
 
-              <nz-form-item>
-                <nz-form-label>预览条数</nz-form-label>
-                <nz-form-control>
-                  <nz-input-number
-                    formControlName="limit"
-                    [nzMin]="1"
-                    [nzMax]="100"
-                    [nzPrecision]="0"
-                  />
-                </nz-form-control>
-              </nz-form-item>
-            </div>
+              <sv label="预览条数" [col]="2">
+                <nz-input-number
+                  formControlName="limit"
+                  [nzMin]="1"
+                  [nzMax]="100"
+                  [nzPrecision]="0"
+                />
+              </sv>
 
-            <nz-form-item>
-              <nz-form-label>过滤条件</nz-form-label>
-              <nz-form-control>
+              <sv label="过滤条件" [col]="6">
                 <textarea
                   nz-input
                   formControlName="whereClause"
                   rows="2"
                   placeholder="例如：deleted = 0"
                 ></textarea>
-              </nz-form-control>
-            </nz-form-item>
+              </sv>
+            </sv-container>
 
             <div class="preview-actions">
               <button nz-button type="button" (click)="loadTables()">

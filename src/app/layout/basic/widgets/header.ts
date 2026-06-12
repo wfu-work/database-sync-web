@@ -15,6 +15,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { filter } from 'rxjs';
 
 import { AvatarComponent } from './avatar';
+import { HeaderMessage } from './message';
 import { ThemeColorComponent } from './theme-color';
 
 @Component({
@@ -35,7 +36,7 @@ import { ThemeColorComponent } from './theme-color';
         <span class="font-weight-bold text-xl title">{{ pageTitle }}</span>
       </div>
       <div class="header-actions">
-        <span class="api-prefix">API /api</span>
+        <header-message />
         <theme-color />
         <header-avatar />
       </div>
@@ -170,7 +171,7 @@ import { ThemeColorComponent } from './theme-color';
     `,
   ],
   standalone: true,
-  imports: [AvatarComponent, LayoutDefaultModule, NzIconModule, ThemeColorComponent],
+  imports: [AvatarComponent, HeaderMessage, LayoutDefaultModule, NzIconModule, ThemeColorComponent],
 })
 export class BasicHeaderComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

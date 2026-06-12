@@ -73,11 +73,15 @@ import {
   CrownOutline,
   OrderedListOutline,
   TransactionOutline,
+  CloudSyncOutline,
+  DeploymentUnitOutline,
 } from '@ant-design/icons-angular/icons';
 
 export const ICONS_AUTO = [
   HomeOutline,
   AppleOutline,
+  DeploymentUnitOutline,
+  CloudSyncOutline,
   BarChartOutline,
   ApiOutline,
   AlertOutline,

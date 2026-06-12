@@ -45,15 +45,17 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
   protected detailVisible = false;
   protected detailLoading = false;
   protected downloadingGuid = '';
+  protected retryingGuid = '';
+  protected deletingGuid = '';
 
   protected readonly columns: Array<STColumn<DatabaseBackup>> = [
-    { title: '备份记录', index: 'guid', render: 'backupRender' },
-    { title: '数据源', index: 'dataSourceName', render: 'sourceRender', width: 180 },
-    { title: '状态', index: 'status', render: 'statusRender', width: 160 },
-    { title: '范围', index: 'totalTables', render: 'scopeRender', width: 180 },
-    { title: '文件', index: 'fileSize', render: 'fileRender', width: 180 },
-    { title: '时间', index: 'startTime', render: 'timeRender', width: 190 },
-    { title: '操作', render: 'actionsRender', width: 150 },
+    { title: '备份记录', index: 'guid', render: 'backupRender', width: 280 },
+    { title: '数据源', index: 'dataSourceName', render: 'sourceRender', width: 170 },
+    { title: '状态', index: 'status', render: 'statusRender', width: 220 },
+    { title: '范围', index: 'totalTables', render: 'scopeRender', width: 100 },
+    { title: '文件', index: 'fileSize', render: 'fileRender', width: 90 },
+    { title: '时间', index: 'startTime', render: 'timeRender', width: 130 },
+    { title: '操作', render: 'actionsRender', width: 170 },
   ];
 
   ngOnInit(): void {
@@ -141,6 +143,66 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
       });
   }
 
+  protected retryTip(item: DatabaseBackup): string {
+    const name = item.fileName || item.dataSourceName || item.guid;
+    return `将在原失败记录「${name}」上重新执行备份，不会新增历史记录。确认重试吗？`;
+  }
+
+  protected deleteTip(item: DatabaseBackup): string {
+    const name = item.fileName || item.dataSourceName || item.guid;
+    return `确定删除备份记录「${name}」吗？如果存在备份文件，也会一并删除。`;
+  }
+
+  protected canDelete(item: DatabaseBackup): boolean {
+    return item.status !== 'pending' && item.status !== 'running';
+  }
+
+  protected retry(item: DatabaseBackup): void {
+    if (item.status !== 'failed') return;
+    this.retryingGuid = item.guid;
+    this.backupsService
+      .retry(item.guid)
+      .pipe(
+        finalize(() => {
+          this.retryingGuid = '';
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.message.success('已在原记录上重新开始备份');
+          this.getData();
+        },
+        error: (err) => this.message.error(err?.msg || err?.message || '重试备份失败'),
+      });
+  }
+
+  protected remove(item: DatabaseBackup): void {
+    if (!this.canDelete(item)) {
+      this.message.warning('备份进行中，完成或失败后再删除');
+      return;
+    }
+    this.deletingGuid = item.guid;
+    this.backupsService
+      .delete(item.guid)
+      .pipe(
+        finalize(() => {
+          this.deletingGuid = '';
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.message.success('备份记录已删除');
+          if (this.selectedBackup?.guid === item.guid) {
+            this.closeDetail();
+          }
+          this.getData();
+        },
+        error: (err) => this.message.error(err?.msg || err?.message || '删除备份记录失败'),
+      });
+  }
+
   protected statusLabel(status: string): string {
     const map: Record<string, string> = {
       pending: '等待',
@@ -156,6 +218,38 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
     if (status === 'failed') return 'status-failed';
     if (status === 'running') return 'status-running';
     return 'status-idle';
+  }
+
+  protected backupPercent(item: DatabaseBackup): number {
+    if (item.status === 'success') return 100;
+    if (!item.totalTables) return item.status === 'running' ? 1 : 0;
+    const currentTableProgress =
+      item.currentTotal > 0 ? Math.min(1, (item.currentRows || 0) / item.currentTotal) : 0;
+    const tableProgress = (item.finishedTables || 0) + currentTableProgress;
+    return Math.min(99, Math.max(1, Math.round((tableProgress / item.totalTables) * 100)));
+  }
+
+  protected currentTablePercent(item: DatabaseBackup): number {
+    if (!item.currentTotal) return item.currentRows ? 1 : 0;
+    return Math.min(99, Math.round(((item.currentRows || 0) / item.currentTotal) * 100));
+  }
+
+  protected rowCount(value?: number): string {
+    if (!value) return '0';
+    return new Intl.NumberFormat('zh-CN').format(value);
+  }
+
+  protected runningDuration(item: DatabaseBackup): string {
+    const start = item.currentStarted || item.startTime;
+    if (!start) return '-';
+    return this.duration(Date.now() - start);
+  }
+
+  protected progressStatus(item: DatabaseBackup): 'success' | 'exception' | 'active' | 'normal' {
+    if (item.status === 'success') return 'success';
+    if (item.status === 'failed') return 'exception';
+    if (item.status === 'running') return 'active';
+    return 'normal';
   }
 
   protected parsedTables(value?: string): string[] {

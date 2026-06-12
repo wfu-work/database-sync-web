@@ -28,8 +28,8 @@
 
 .create-layout {
   display: grid;
-  grid-template-columns: minmax(0, 760px) minmax(320px, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(620px, 1fr) minmax(340px, 460px);
+  gap: 20px;
   align-items: start;
 }
 
@@ -40,8 +40,12 @@
   border-radius: 8px;
 }
 
+:host ::ng-deep .form-card .ant-card-body {
+  padding: 24px 28px 22px;
+}
+
 .form-title {
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .form-title h2 {
@@ -65,7 +69,7 @@
 
 .sv-form {
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
 .form-sv {
@@ -93,6 +97,46 @@
   margin-top: 8px;
 }
 
+.field-help {
+  display: block;
+  margin-top: 6px;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.backup-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgb(var(--nm-primary-rgb) / 5%), rgb(255 255 255 / 70%));
+}
+
+.backup-summary div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.backup-summary span {
+  color: #7b8798;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.backup-summary strong {
+  overflow: hidden;
+  color: #1d2b3f;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .form-actions {
   justify-content: flex-end;
   padding-top: 4px;
@@ -100,20 +144,22 @@
 
 .context-panel {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
 .context-block {
   display: grid;
-  gap: 10px;
-  padding: 16px;
+  gap: 12px;
+  padding: 18px;
   border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
   border-radius: 8px;
   background: rgb(255 255 255 / 72%);
 }
 
 .context-primary {
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
   border-color: rgb(var(--nm-primary-rgb) / 18%);
   background: rgb(var(--nm-primary-rgb) / 6%);
 }
@@ -136,6 +182,14 @@
   color: #1d2b3f;
 }
 
+.context-primary h3 {
+  margin-top: 1px;
+}
+
+.context-primary p {
+  grid-column: 2;
+}
+
 .context-block p,
 .context-list {
   max-width: 620px;
@@ -144,9 +198,19 @@
   line-height: 1.7;
 }
 
+.context-group {
+  display: grid;
+  gap: 8px;
+}
+
+.context-group + .context-group {
+  padding-top: 14px;
+  border-top: 1px solid rgb(var(--nm-primary-rgb) / 8%);
+}
+
 .context-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   padding: 0;
   list-style: none;
 }
@@ -160,7 +224,7 @@
 
 .context-list i {
   margin-top: 4px;
-  color: #168a46;
+  color: var(--nm-primary);
 }
 
 .code-line {
@@ -178,6 +242,14 @@
   .create-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .context-panel {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .context-panel .context-block:last-child {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 767px) {
@@ -185,5 +257,14 @@
   .form-title {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  :host ::ng-deep .form-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .backup-summary,
+  .context-panel {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

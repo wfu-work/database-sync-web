@@ -11,7 +11,7 @@
 
       <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
         <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
-          <sv label="任务名称 *" [col]="2">
+          <sv label="任务名称 *" [col]="1">
             <input
               nz-input
               formControlName="name"
@@ -175,7 +175,7 @@
             </sv>
           }
 
-          <sv label="字段映射 JSON *" [col]="2">
+          <sv label="字段映射 JSON *" [col]="1">
             <span class="field-toolbar">
               <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
                 插入示例
@@ -193,7 +193,7 @@
             <textarea
               nz-input
               formControlName="fieldsText"
-              rows="10"
+              rows="20"
               spellcheck="false"
               [class.field-invalid]="fieldError"
             ></textarea>
@@ -202,7 +202,7 @@
             }
           </sv>
 
-          <sv label="备注" [col]="2">
+          <sv label="备注" [col]="1">
             <textarea nz-input formControlName="remark" rows="2"></textarea>
           </sv>
         </sv-container>
@@ -306,6 +306,54 @@
         <h3>映射示例</h3>
         <div class="code-line">&#123;"source":"created_at","target":"ts"&#125;</div>
         <div class="code-line">&#123;"target":"source_type","default":"mysql"&#125;</div>
+      </section>
+
+      <section class="context-block">
+        <h3>字段映射写法</h3>
+        <ul class="context-list">
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>source 表示源字段，target 表示写入目标字段。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>default 可写入固定值，适合补充来源、类型或租户标识。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>transform 可用于时间、数字等格式转换，保存前先校验配置。</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="context-block">
+        <h3>模式选择</h3>
+        <div class="mode-notes">
+          <div>
+            <strong>全量同步</strong>
+            <span>适合首次导入、结构调整后重建目标表，执行时会按过滤条件重新读取源表。</span>
+          </div>
+          <div>
+            <strong>增量同步</strong>
+            <span>适合定时任务，需要稳定递增的游标字段，例如自增 id 或写入时间。</span>
+          </div>
+          <div>
+            <strong>批次大小</strong>
+            <span>默认 1000 更稳妥；大表可适当调大，但要观察数据库连接和写入压力。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="context-block">
+        <h3>提交前检查</h3>
+        <ul class="context-list">
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>先读取源表和目标表字段，确认字段名和类型匹配。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>使用过滤条件时，建议先预估源数据量，避免误同步过多数据。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i><span>启用定时前先手动执行一次，确认游标推进和写入结果正常。</span>
+          </li>
+        </ul>
       </section>
     </aside>
   </div>

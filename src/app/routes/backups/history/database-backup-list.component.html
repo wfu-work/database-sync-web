@@ -81,6 +81,39 @@
         <span class="status" [class]="statusClass(item.status)">
           {{ statusLabel(item.status) }}
         </span>
+        @if (item.status === 'running' || item.finishedTables || item.currentTable) {
+          <div class="backup-progress">
+            <nz-progress
+              [nzPercent]="backupPercent(item)"
+              [nzStatus]="progressStatus(item)"
+              [nzShowInfo]="false"
+            />
+            <div class="muted">
+              {{ item.finishedTables || 0 }} / {{ item.totalTables || 0 }} 张表
+            </div>
+            @if (item.currentTable) {
+              <div class="table-progress">
+                <div class="muted ellipsis">当前：{{ item.currentTable }}</div>
+                <div class="muted">
+                  已读 {{ rowCount(item.currentRows) }}
+                  @if (item.currentTotal) {
+                    / {{ rowCount(item.currentTotal) }}
+                  }
+                  行 · 第 {{ item.currentBatch || 0 }} 批
+                </div>
+                @if (item.currentTotal) {
+                  <nz-progress
+                    [nzPercent]="currentTablePercent(item)"
+                    nzSize="small"
+                    nzStatus="active"
+                    [nzShowInfo]="false"
+                  />
+                }
+                <div class="muted">当前表已用 {{ runningDuration(item) }}</div>
+              </div>
+            }
+          </div>
+        }
         @if (item.lastError) {
           <div class="muted error-text">{{ item.lastError }}</div>
         }
@@ -118,6 +151,40 @@
               下载
             </button>
           }
+          @if (item.status === 'failed') {
+            <button
+              nz-button
+              nzType="link"
+              [nzLoading]="retryingGuid === item.guid"
+              nz-popconfirm
+              [nzPopconfirmTitle]="retryTip(item)"
+              nzPopconfirmPlacement="topRight"
+              nzOkText="重试"
+              nzCancelText="取消"
+              (nzOnConfirm)="retry(item)"
+            >
+              <i nz-icon nzType="redo"></i>
+              重试
+            </button>
+          }
+          @if (canDelete(item)) {
+            <button
+              nz-button
+              nzType="link"
+              nzDanger
+              [nzLoading]="deletingGuid === item.guid"
+              nz-popconfirm
+              [nzPopconfirmTitle]="deleteTip(item)"
+              nzPopconfirmPlacement="topRight"
+              nzOkText="删除"
+              nzCancelText="取消"
+              [nzOkDanger]="true"
+              (nzOnConfirm)="remove(item)"
+            >
+              <i nz-icon nzType="delete"></i>
+              删除
+            </button>
+          }
         </div>
       </ng-template>
     </st>
@@ -152,6 +219,39 @@
                   下载
                 </button>
               }
+              @if (selectedBackup.status === 'failed') {
+                <button
+                  nz-button
+                  nzType="primary"
+                  [nzLoading]="retryingGuid === selectedBackup.guid"
+                  nz-popconfirm
+                  [nzPopconfirmTitle]="retryTip(selectedBackup)"
+                  nzPopconfirmPlacement="bottomRight"
+                  nzOkText="重试"
+                  nzCancelText="取消"
+                  (nzOnConfirm)="retry(selectedBackup)"
+                >
+                  <i nz-icon nzType="redo"></i>
+                  重试备份
+                </button>
+              }
+              @if (canDelete(selectedBackup)) {
+                <button
+                  nz-button
+                  nzDanger
+                  [nzLoading]="deletingGuid === selectedBackup.guid"
+                  nz-popconfirm
+                  [nzPopconfirmTitle]="deleteTip(selectedBackup)"
+                  nzPopconfirmPlacement="bottomRight"
+                  nzOkText="删除"
+                  nzCancelText="取消"
+                  [nzOkDanger]="true"
+                  (nzOnConfirm)="remove(selectedBackup)"
+                >
+                  <i nz-icon nzType="delete"></i>
+                  删除记录
+                </button>
+              }
             </div>
           </div>
 
@@ -177,8 +277,35 @@
               <strong>{{ selectedBackup.totalTables || 0 }}</strong>
             </div>
             <div>
+              <span>已完成表</span>
+              <strong>
+                {{ selectedBackup.finishedTables || 0 }} / {{ selectedBackup.totalTables || 0 }}
+              </strong>
+            </div>
+            <div>
+              <span>当前表</span>
+              <strong>{{ selectedBackup.currentTable || '-' }}</strong>
+            </div>
+            <div>
+              <span>当前表行数</span>
+              <strong>
+                {{ rowCount(selectedBackup.currentRows) }}
+                @if (selectedBackup.currentTotal) {
+                  / {{ rowCount(selectedBackup.currentTotal) }}
+                }
+              </strong>
+            </div>
+            <div>
+              <span>当前批次</span>
+              <strong>{{ selectedBackup.currentBatch || 0 }}</strong>
+            </div>
+            <div>
+              <span>当前表耗时</span>
+              <strong>{{ runningDuration(selectedBackup) }}</strong>
+            </div>
+            <div>
               <span>总行数</span>
-              <strong>{{ selectedBackup.totalRows || 0 }}</strong>
+              <strong>{{ rowCount(selectedBackup.totalRows) }}</strong>
             </div>
             <div>
               <span>开始时间</span>

@@ -33,9 +33,34 @@
 }
 
 .list-card {
+  overflow: hidden;
   min-width: 0;
   border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
   border-radius: 8px;
+}
+
+.list-card ::ng-deep {
+  .ant-card-body,
+  st,
+  .st,
+  .ant-table-wrapper,
+  .ant-table,
+  .ant-table-container {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ant-table table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .query-bar {
@@ -106,6 +131,27 @@
 .status-idle {
   color: #667085;
   background: #eef2f7;
+}
+
+.backup-progress {
+  display: grid;
+  gap: 2px;
+  width: 190px;
+  margin-top: 6px;
+}
+
+.backup-progress ::ng-deep .ant-progress-line {
+  margin-bottom: 0;
+}
+
+.table-progress {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.table-progress ::ng-deep .ant-progress-line {
+  margin-bottom: 0;
 }
 
 .action-col {

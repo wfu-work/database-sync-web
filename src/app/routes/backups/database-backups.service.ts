@@ -27,6 +27,14 @@ export class DatabaseBackupsService {
     return this.http.post<DatabaseBackup>('/backups', payload);
   }
 
+  retry(guid: string): Observable<DatabaseBackup> {
+    return this.http.post<DatabaseBackup>(`/backups/${guid}/retry`, {});
+  }
+
+  delete(guid: string): Observable<boolean> {
+    return this.http.delete<boolean>(`/backups/${guid}`);
+  }
+
   download(guid: string): Observable<HttpResponse<Blob>> {
     return this.http.get(`/backups/${guid}/download`, {
       observe: 'response',

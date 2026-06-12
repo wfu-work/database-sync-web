@@ -2,25 +2,32 @@ import { DatePipe, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   EventEmitter,
   Input,
+  OnInit,
   Output,
   computed,
+  inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EventNotificationsService } from '@shared/services/event-notifications.service';
+import { EventNotification } from '@shared/types/datasync';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { EMPTY, catchError, switchMap, timer } from 'rxjs';
 
 type HeaderMessageLevel = 'info' | 'warning' | 'error';
 
 export interface HeaderMessageItem {
-  id: number;
+  id: string;
   title: string;
   content: string;
-  time: string;
+  time: string | number;
   read: boolean;
   level: HeaderMessageLevel;
 }
@@ -289,7 +296,10 @@ export interface HeaderMessageItem {
     }
   `,
 })
-export class HeaderMessage {
+export class HeaderMessage implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly service = inject(EventNotificationsService);
+
   @Input() title = '消息通知';
   @Input() emptyText = '暂无消息';
   @Input() set items(value: HeaderMessageItem[] | null | undefined) {
@@ -300,49 +310,59 @@ export class HeaderMessage {
 
   @Output() readonly itemClick = new EventEmitter<HeaderMessageItem>();
 
-  protected readonly messages = signal<HeaderMessageItem[]>([
-    {
-      id: 1,
-      title: '设备离线提醒',
-      content: '有 1 台设备超过 10 分钟未上报心跳，请检查设备网络或隧道客户端状态。',
-      time: '2026-05-07T14:10:00',
-      read: false,
-      level: 'error',
-    },
-    {
-      id: 2,
-      title: 'HTTP 映射恢复',
-      content: 'HTTP 映射最近一次访问已恢复正常，可以在访问日志中查看历史记录。',
-      time: '2026-05-07T11:35:00',
-      read: false,
-      level: 'info',
-    },
-    {
-      id: 3,
-      title: '访问策略提示',
-      content: '发现有映射未配置访问策略，建议在权限策略页面确认 SSH/HTTP 访问范围。',
-      time: '2026-05-06T20:18:00',
-      read: true,
-      level: 'warning',
-    },
-  ]);
+  protected readonly messages = signal<HeaderMessageItem[]>([]);
 
   protected readonly unreadCount = computed(
     () => this.messages().filter((item) => !item.read).length,
   );
 
-  protected markRead(id: number): void {
+  ngOnInit(): void {
+    timer(0, 30000)
+      .pipe(
+        switchMap(() =>
+          this.service.list({ page: 1, size: 20 }).pipe(catchError(() => EMPTY)),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        this.messages.set((res.data ?? []).map((item) => this.toHeaderMessage(item)));
+      });
+  }
+
+  protected markRead(id: string): void {
     this.messages.update((list) =>
       list.map((item) => (item.id === id ? { ...item, read: true } : item)),
     );
+    this.service.markRead(id).pipe(catchError(() => EMPTY)).subscribe();
   }
 
   protected markAllRead(): void {
     this.messages.update((list) => list.map((item) => ({ ...item, read: true })));
+    this.service.markAllRead().pipe(catchError(() => EMPTY)).subscribe();
   }
 
   protected handleItemClick(item: HeaderMessageItem): void {
-    this.markRead(item.id);
+    if (!item.read) {
+      this.markRead(item.id);
+    }
     this.itemClick.emit(item);
+  }
+
+  private toHeaderMessage(item: EventNotification): HeaderMessageItem {
+    return {
+      id: item.guid,
+      title: item.title,
+      content: item.content,
+      time: item.eventTime || item.createTime,
+      read: item.read === 1,
+      level: this.normalizeLevel(item.level),
+    };
+  }
+
+  private normalizeLevel(level: string): HeaderMessageLevel {
+    if (level === 'warning' || level === 'error') {
+      return level;
+    }
+    return 'info';
   }
 }

@@ -49,7 +49,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
               </li>
             </ul>
           </li>
-          <li nz-submenu nzTitle="同步管理" nzIcon="sync">
+          <li nz-submenu nzTitle="同步管理" nzIcon="deployment-unit">
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/sync/tasks/list">
                 <span>同步任务</span>
@@ -62,7 +62,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
               </li>
             </ul>
           </li>
-          <li nz-submenu nzTitle="数据备份" nzIcon="hdd">
+          <li nz-submenu nzTitle="数据备份" nzIcon="cloud-sync">
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/backups/history">
                 <span>备份历史</span>

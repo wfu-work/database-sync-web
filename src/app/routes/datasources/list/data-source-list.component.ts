@@ -53,11 +53,12 @@ export class DataSourceListComponent implements OnInit {
   protected columnsLoading = false;
   protected previewLoading = false;
   protected readonly columns: Array<STColumn<DataSource>> = [
-    { title: '数据源', index: 'name', render: 'nameRender' },
-    { title: '连接', index: 'host', render: 'connectionRender' },
-    { title: '状态', index: 'status', render: 'statusRender', },
-    { title: '更新时间', index: 'updateTime', render: 'timeRender', },
-    { title: '操作', render: 'actionsRender'},
+    { title: '数据源', index: 'name', render: 'nameRender', width: 200 },
+    { title: '连接', index: 'host', render: 'connectionRender', width: 200 },
+    { title: '连接状态', index: 'connectionStatus', render: 'connectionStatusRender', width: 90 },
+    { title: '状态', index: 'status', render: 'statusRender', width: 65 },
+    { title: '更新时间', index: 'updateTime', render: 'timeRender', width: 140 },
+    { title: '操作', render: 'actionsRender', width: 176 },
   ];
 
   protected readonly previewForm = this.fb.group({
@@ -246,6 +247,27 @@ export class DataSourceListComponent implements OnInit {
     return status === 1 ? '启用' : '禁用';
   }
 
+  protected connectionStatusLabel(status?: string): string {
+    switch (status) {
+      case 'checking':
+        return '检查中';
+      case 'connected':
+        return '正常';
+      case 'failed':
+        return '异常';
+      default:
+        return '未检查';
+    }
+  }
+
+  protected connectionStatusTooltip(item: DataSource): string {
+    const checkedAt = this.formatTime(item.connectionCheckedAt);
+    if (item.connectionStatus === 'failed' && item.connectionError) {
+      return `${checkedAt} · ${item.connectionError}`;
+    }
+    return checkedAt === '-' ? '等待定时检查' : `最后检查：${checkedAt}`;
+  }
+
   protected formatTime(value?: number): string {
     if (!value) return '-';
     const date = new Date(value);
@@ -267,6 +289,10 @@ export class DataSourceListComponent implements OnInit {
 
   private normalizeType(type: string): DataSourceType {
     return type === 'tdengine' || type === 'td' || type === 'taos' ? 'tdengine' : 'mysql';
+  }
+
+  protected isConnectionStatus(item: DataSource, status: string): boolean {
+    return (item.connectionStatus || 'unknown') === status;
   }
 
   protected tableChange(event: STChange): void {
