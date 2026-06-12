@@ -1,6 +1,9 @@
 <section class="monitor-page">
   <div class="page-heading">
-    <title-label title="运行监控" description="集中观察正在运行和失败待处理的同步、备份、连接与通知状态。" />
+    <title-label
+      title="运行监控"
+      description="集中观察正在运行和失败待处理的同步、备份、连接与通知状态。"
+    />
     <div class="page-actions">
       <span class="refresh-chip">更新 {{ formatTime(lastUpdated) }}</span>
       <button nz-button (click)="toggleAutoRefresh()">
@@ -16,12 +19,168 @@
 
   <div class="metric-grid">
     @for (item of metrics(); track item.label) {
-      <button type="button" class="metric-card" [class]="'metric-' + item.tone" (click)="openLink(item.link)">
+      <button
+        type="button"
+        class="metric-card"
+        [class]="'metric-' + item.tone"
+        (click)="openLink(item.link)"
+      >
         <span>{{ item.label }}</span>
         <strong>{{ item.value }}</strong>
         <em>{{ item.hint }}</em>
       </button>
     }
+  </div>
+
+  <div class="system-layout">
+    <nz-card
+      class="monitor-card service-card"
+      [class]="'service-' + serviceHealthTone()"
+      [nzBordered]="false"
+    >
+      <div class="card-heading">
+        <div>
+          <h2>本服务运行状态</h2>
+          <span>当前部署的 DataSync 后端服务实例。</span>
+        </div>
+        <span class="status-chip" [class]="'status-' + serviceHealthTone()">
+          {{ systemMonitor?.service?.status === 'running' ? '运行中' : '未知' }}
+        </span>
+      </div>
+
+      @if (systemMonitor; as monitor) {
+        <div class="service-summary">
+          <div>
+            <span>服务名称</span>
+            <strong>{{ monitor.service.name }}</strong>
+          </div>
+          <div>
+            <span>PID</span>
+            <strong>{{ monitor.service.pid || '-' }}</strong>
+          </div>
+          <div>
+            <span>运行时长</span>
+            <strong>{{ durationSeconds(monitor.service.uptimeSeconds) }}</strong>
+          </div>
+          <div>
+            <span>协程数</span>
+            <strong>{{ rowCount(monitor.service.numGoroutine) }}</strong>
+          </div>
+        </div>
+
+        <div class="service-meta">
+          <span>{{ monitor.service.goVersion }} · {{ monitor.service.goos }}</span>
+          <span>启动 {{ formatTime(monitor.service.startedAt) }}</span>
+          <span>工作目录 {{ monitor.service.workingDir || '-' }}</span>
+        </div>
+
+        @if (monitor.warnings.length > 0) {
+          <div class="warning-note">
+            <i nz-icon nzType="warning"></i>
+            <span>{{ monitor.warnings.join('；') }}</span>
+          </div>
+        }
+      } @else {
+        <div class="empty-state compact">暂未读取到服务运行状态。</div>
+      }
+    </nz-card>
+
+    <nz-card class="monitor-card server-card" [nzBordered]="false">
+      <div class="card-heading">
+        <div>
+          <h2>服务器性能</h2>
+          <span>CPU、内存和磁盘来自部署服务器实时采样。</span>
+        </div>
+        <span class="card-chip">采样 {{ formatTime(systemMonitor?.checkedAt) }}</span>
+      </div>
+
+      @if (systemMonitor; as monitor) {
+        <div class="resource-grid">
+          <div class="resource-item">
+            <div class="resource-head">
+              <span>CPU</span>
+              <strong>{{ cpuPercent() }}%</strong>
+            </div>
+            <nz-progress
+              [nzPercent]="cpuPercent()"
+              [nzStatus]="percentStatus(cpuPercent())"
+              [nzShowInfo]="false"
+            />
+            <em>{{ monitor.cpu.cores || monitor.service.numCpu || 0 }} 核心</em>
+          </div>
+
+          <div class="resource-item">
+            <div class="resource-head">
+              <span>内存</span>
+              <strong>{{ memoryPercent() }}%</strong>
+            </div>
+            <nz-progress
+              [nzPercent]="memoryPercent()"
+              [nzStatus]="percentStatus(memoryPercent())"
+              [nzShowInfo]="false"
+            />
+            <em>{{ formatMb(monitor.ram.usedMb) }} / {{ formatMb(monitor.ram.totalMb) }}</em>
+          </div>
+
+          <div class="resource-item">
+            @if (firstDisk(); as disk) {
+              <div class="resource-head">
+                <span>磁盘</span>
+                <strong>{{ diskPercent(disk) }}%</strong>
+              </div>
+              <nz-progress
+                [nzPercent]="diskPercent(disk)"
+                [nzStatus]="percentStatus(diskPercent(disk))"
+                [nzShowInfo]="false"
+              />
+              <em
+                >{{ disk.mountPoint }} · {{ formatMb(disk.usedMb) }} /
+                {{ formatMb(disk.totalMb) }}</em
+              >
+            } @else {
+              <div class="resource-head">
+                <span>磁盘</span>
+                <strong>-</strong>
+              </div>
+              <div class="empty-line">暂无磁盘采样。</div>
+            }
+          </div>
+        </div>
+
+        <div class="runtime-grid">
+          <div>
+            <span>进程内存</span>
+            <strong>{{ formatBytes(monitor.service.allocBytes) }}</strong>
+          </div>
+          <div>
+            <span>堆内存</span>
+            <strong>{{ formatBytes(monitor.service.heapAllocBytes) }}</strong>
+          </div>
+          <div>
+            <span>系统占用</span>
+            <strong>{{ formatBytes(monitor.service.sysBytes) }}</strong>
+          </div>
+          <div>
+            <span>Go 编译器</span>
+            <strong>{{ monitor.service.compiler || '-' }}</strong>
+          </div>
+        </div>
+
+        @if (monitor.disk.length > 1) {
+          <div class="disk-list">
+            @for (disk of monitor.disk; track disk.mountPoint) {
+              <div class="disk-row">
+                <span>{{ disk.mountPoint }}</span>
+                <strong>{{ diskPercent(disk) }}%</strong>
+                <em>{{ formatMb(disk.usedMb) }} / {{ formatMb(disk.totalMb) }}</em>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <div class="empty-state compact">暂未读取到服务器性能信息。</div>
+      }
+    </nz-card>
   </div>
 
   <div class="monitor-layout">
@@ -88,7 +247,9 @@
           @for (item of unhealthySources; track item.guid) {
             <a class="issue-row" [routerLink]="['/datasources/edit', item.guid]">
               <strong>{{ item.name }}</strong>
-              <span>{{ item.host }}:{{ item.port }} · {{ item.connectionError || '连接失败' }}</span>
+              <span
+                >{{ item.host }}:{{ item.port }} · {{ item.connectionError || '连接失败' }}</span
+              >
             </a>
           } @empty {
             <div class="empty-state compact">连接状态正常。</div>

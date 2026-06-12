@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { NonNullableFormBuilder, Validators } from '@angular/forms';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -10,12 +16,23 @@ const DEFAULT_SETTINGS: SyncSystemSettings = {
   backupBatchSize: 1000,
   backupRetryTimes: 3,
   backupRetryIntervalMs: 3000,
+  backupTimeoutSeconds: 21600,
   tdengineParams: '{"timeout":"5m"}',
   mysqlParams: '{"timeout":"5m","readTimeout":"5m","writeTimeout":"5m"}',
   syncBatchSize: 1000,
+  syncRetryTimes: 2,
+  syncRetryIntervalMs: 1500,
+  syncTimeoutSeconds: 21600,
+  restoreBatchSize: 1000,
+  restoreWriteMode: 'insert',
+  restoreCreateTable: true,
+  restoreTruncateBefore: false,
+  healthCheckIntervalSec: 60,
   monitorRefreshSeconds: 5,
+  runRetentionDays: 30,
   notificationRetentionDays: 30,
   backupRetentionDays: 30,
+  restoreRetentionDays: 30,
   logLevel: 'info',
 };
 
@@ -42,19 +59,45 @@ export class SystemSettingsComponent implements OnInit {
       DEFAULT_SETTINGS.backupRetryIntervalMs,
       [Validators.required, Validators.min(0)],
     ],
+    backupTimeoutSeconds: [
+      DEFAULT_SETTINGS.backupTimeoutSeconds,
+      [Validators.required, Validators.min(1)],
+    ],
     tdengineParams: [DEFAULT_SETTINGS.tdengineParams],
     mysqlParams: [DEFAULT_SETTINGS.mysqlParams],
     syncBatchSize: [DEFAULT_SETTINGS.syncBatchSize, [Validators.required, Validators.min(1)]],
+    syncRetryTimes: [DEFAULT_SETTINGS.syncRetryTimes, [Validators.required, Validators.min(0)]],
+    syncRetryIntervalMs: [
+      DEFAULT_SETTINGS.syncRetryIntervalMs,
+      [Validators.required, Validators.min(0)],
+    ],
+    syncTimeoutSeconds: [
+      DEFAULT_SETTINGS.syncTimeoutSeconds,
+      [Validators.required, Validators.min(1)],
+    ],
+    restoreBatchSize: [DEFAULT_SETTINGS.restoreBatchSize, [Validators.required, Validators.min(1)]],
+    restoreWriteMode: [DEFAULT_SETTINGS.restoreWriteMode, [Validators.required]],
+    restoreCreateTable: [DEFAULT_SETTINGS.restoreCreateTable],
+    restoreTruncateBefore: [DEFAULT_SETTINGS.restoreTruncateBefore],
+    healthCheckIntervalSec: [
+      DEFAULT_SETTINGS.healthCheckIntervalSec,
+      [Validators.required, Validators.min(10)],
+    ],
     monitorRefreshSeconds: [
       DEFAULT_SETTINGS.monitorRefreshSeconds,
       [Validators.required, Validators.min(3)],
     ],
+    runRetentionDays: [DEFAULT_SETTINGS.runRetentionDays, [Validators.required, Validators.min(1)]],
     notificationRetentionDays: [
       DEFAULT_SETTINGS.notificationRetentionDays,
       [Validators.required, Validators.min(1)],
     ],
     backupRetentionDays: [
       DEFAULT_SETTINGS.backupRetentionDays,
+      [Validators.required, Validators.min(1)],
+    ],
+    restoreRetentionDays: [
+      DEFAULT_SETTINGS.restoreRetentionDays,
       [Validators.required, Validators.min(1)],
     ],
     logLevel: [DEFAULT_SETTINGS.logLevel, [Validators.required]],
@@ -133,6 +176,13 @@ export class SystemSettingsComponent implements OnInit {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '未保存';
     return date.toLocaleString('zh-CN', { hour12: false });
+  }
+
+  protected durationLabel(seconds?: number): string {
+    if (!seconds) return '-';
+    if (seconds < 60) return `${seconds} 秒`;
+    if (seconds < 3600) return `${Math.round(seconds / 60)} 分钟`;
+    return `${Math.round(seconds / 3600)} 小时`;
   }
 
   private isJsonObject(value: string): boolean {

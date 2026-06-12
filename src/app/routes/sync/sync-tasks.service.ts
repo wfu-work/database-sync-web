@@ -2,8 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import {
   SaveSyncTaskPayload,
+  SaveSyncTemplateFromTaskPayload,
+  SaveSyncTemplatePayload,
   ScheduleItem,
   SyncRun,
+  SyncTemplate,
   SyncTask,
   SyncTaskPreviewRequest,
   SyncTaskPreviewResult,
@@ -17,6 +20,11 @@ export interface SyncTaskQuery extends PageQuery {
   scheduleOn?: string | number;
 }
 
+export interface SyncTemplateQuery extends PageQuery {
+  mode?: string;
+  status?: string | number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SyncTasksService {
   private readonly http = inject(HttpClient);
@@ -25,6 +33,10 @@ export class SyncTasksService {
     return this.http.get<PageResult<SyncTask>>('/sync/tasks/list', {
       params: this.toParams(query),
     });
+  }
+
+  get(guid: string): Observable<SyncTask> {
+    return this.http.get<SyncTask>(`/sync/tasks/${guid}`);
   }
 
   save(payload: SaveSyncTaskPayload, guid?: string): Observable<SyncTask> {
@@ -66,7 +78,35 @@ export class SyncTasksService {
     return this.http.post<boolean>('/sync/tasks/schedules/reload', {});
   }
 
-  private toParams(query: SyncTaskQuery): HttpParams {
+  templateList(query: SyncTemplateQuery = {}): Observable<PageResult<SyncTemplate>> {
+    return this.http.get<PageResult<SyncTemplate>>('/sync/templates/list', {
+      params: this.toParams(query),
+    });
+  }
+
+  saveTemplate(payload: SaveSyncTemplatePayload, guid?: string): Observable<SyncTemplate> {
+    if (guid) {
+      return this.http.put<SyncTemplate>(`/sync/templates/${guid}`, payload);
+    }
+    return this.http.post<SyncTemplate>('/sync/templates', payload);
+  }
+
+  deleteTemplate(guid: string): Observable<boolean> {
+    return this.http.delete<boolean>(`/sync/templates/${guid}`);
+  }
+
+  updateTemplateStatus(guid: string, status: number): Observable<boolean> {
+    return this.http.put<boolean>(`/sync/templates/${guid}/status`, { status });
+  }
+
+  saveTemplateFromTask(
+    guid: string,
+    payload: SaveSyncTemplateFromTaskPayload = {},
+  ): Observable<SyncTemplate> {
+    return this.http.post<SyncTemplate>(`/sync/templates/from-task/${guid}`, payload);
+  }
+
+  private toParams(query: SyncTaskQuery | SyncTemplateQuery): HttpParams {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value === undefined || value === null || value === '') return;

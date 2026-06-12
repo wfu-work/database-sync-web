@@ -1,0 +1,112 @@
+<section class="sync-template-page">
+  <div class="page-heading">
+    <title-label title="同步模板" description="沉淀常用同步配置，新建任务时可直接套用模板。" />
+    <div class="page-actions">
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+      <button nz-button nzType="primary" (click)="openCreate()">
+        <i nz-icon nzType="plus"></i>
+        新建模板
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>模板列表</strong>
+          <span>按模板名称、表名、说明或备注快速定位。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索模板名称、GUID、表名、说明或备注"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <nz-select [(ngModel)]="q.mode" nzPlaceHolder="模式" (ngModelChange)="search()">
+          <nz-option nzValue="" nzLabel="全部模式" />
+          <nz-option nzValue="full" nzLabel="全量" />
+          <nz-option nzValue="incremental" nzLabel="增量" />
+        </nz-select>
+        <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+          <nz-option nzValue="" nzLabel="全部状态" />
+          <nz-option nzValue="1" nzLabel="启用" />
+          <nz-option nzValue="0" nzLabel="禁用" />
+        </nz-select>
+        <button nz-button nzType="primary" (click)="search()">
+          <i nz-icon nzType="search"></i>
+          搜索
+        </button>
+        <button nz-button (click)="resetQuery()">重置</button>
+      </div>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="nameRender" let-item>
+        <div class="strong">{{ item.name }}</div>
+        <div class="muted">{{ item.description || item.remark || '-' }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+      </ng-template>
+
+      <ng-template st-row="routeRender" let-item>
+        <div>{{ sourceName(item.sourceGuid) }} → {{ sourceName(item.targetGuid) }}</div>
+        <div class="muted mono">{{ item.sourceTable || '-' }} → {{ item.targetTable || '-' }}</div>
+      </ng-template>
+
+      <ng-template st-row="strategyRender" let-item>
+        <span class="pill">{{ modeLabel(item.mode) }}</span>
+        <span class="pill pill-neutral">{{ item.writeMode || 'insert' }}</span>
+        <div class="muted">批次 {{ item.batchSize || 1000 }} · {{ statusLabel(item.status) }}</div>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        <div>{{ formatTime(item.updateTime) }}</div>
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button nz-button nzType="link" (click)="useTemplate(item)">
+            <i nz-icon nzType="thunderbolt"></i>
+            用于新建
+          </button>
+          <button
+            nz-button
+            nzType="link"
+            [nzLoading]="statusChangingGuid === item.guid"
+            (click)="toggleStatus(item)"
+          >
+            <i nz-icon [nzType]="item.status === 1 ? 'stop' : 'check-circle'"></i>
+            {{ item.status === 1 ? '禁用' : '启用' }}
+          </button>
+          <button nz-button nzType="link" (click)="openEdit(item)">
+            <i nz-icon nzType="edit"></i>
+            编辑
+          </button>
+          <button nz-button nzType="link" nzDanger (click)="remove(item)">
+            <i nz-icon nzType="delete"></i>
+            删除
+          </button>
+        </div>
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

@@ -1,6 +1,9 @@
 <section class="health-page">
   <div class="page-heading">
-    <title-label title="连接健康" description="集中查看数据源可用性，快速发现会影响同步和备份的连接问题。" />
+    <title-label
+      title="连接健康"
+      description="集中查看数据源可用性，快速发现会影响同步和备份的连接问题。"
+    />
     <div class="page-actions">
       <button nz-button (click)="getData()">
         <i nz-icon nzType="reload"></i>
@@ -104,12 +107,18 @@
             {{ item.connectionError }}
           </ellipsis>
         } @else {
-          <span class="muted">-</span>
+          <span class="muted">暂无异常</span>
         }
       </ng-template>
 
       <ng-template st-row="actionsRender" let-item>
         <div class="action-col">
+          @if (canOpenDetail(item)) {
+            <button nz-button nzType="link" (click)="openDetail(item)">
+              <i nz-icon nzType="database"></i>
+              数据库详情
+            </button>
+          }
           <button
             nz-button
             nzType="link"

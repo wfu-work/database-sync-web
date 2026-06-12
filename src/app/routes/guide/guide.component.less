@@ -10,7 +10,7 @@
 
 .guide-flow {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-top: 6px;
 }
@@ -48,7 +48,8 @@
 }
 
 .step-body h2,
-.guide-card h2 {
+.guide-card h2,
+.section-heading h2 {
   margin: 0;
   font-size: 17px;
   font-weight: 800;
@@ -89,6 +90,20 @@
   padding: 20px;
 }
 
+.section-heading {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.section-heading span {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #667385;
+}
+
 .connect-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -109,6 +124,65 @@
   font-size: 13px;
   font-weight: 700;
   color: #667385;
+}
+
+.quick-grid,
+.setting-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.quick-card {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  min-height: 118px;
+  padding: 16px 42px 16px 16px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  color: #526174;
+  background: #f8fafc;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.quick-card:hover {
+  transform: translateY(-1px);
+  border-color: rgb(var(--nm-primary-rgb) / 24%);
+  box-shadow: 0 10px 26px rgb(20 38 76 / 8%);
+}
+
+.quick-card strong,
+.setting-grid strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1d2b3f;
+}
+
+.quick-card span {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.quick-card i {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--nm-primary);
+}
+
+.setting-grid > div {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .check-list {
@@ -135,15 +209,23 @@
 
 @media (max-width: 1199px) {
   .guide-flow,
-  .connect-grid {
+  .connect-grid,
+  .quick-grid,
+  .setting-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 767px) {
   .guide-flow,
-  .connect-grid {
+  .connect-grid,
+  .quick-grid,
+  .setting-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    flex-direction: column;
   }
 
   .step-body p {

@@ -52,7 +52,7 @@ export class DataSourceHealthComponent implements OnInit {
     { title: '健康状态', index: 'connectionStatus', render: 'healthRender', width: 170 },
     { title: '最近检查', index: 'connectionCheckedAt', render: 'checkedRender', width: 180 },
     { title: '异常信息', index: 'connectionError', render: 'errorRender' },
-    { title: '操作', render: 'actionsRender', width: 160 },
+    { title: '操作', render: 'actionsRender', width: 220 },
   ];
 
   ngOnInit(): void {
@@ -95,6 +95,7 @@ export class DataSourceHealthComponent implements OnInit {
 
   protected test(item: DataSource): void {
     this.testingGuid = item.guid;
+    this.markConnectionChecking(item.guid);
     this.service
       .test(item.guid)
       .pipe(
@@ -117,6 +118,14 @@ export class DataSourceHealthComponent implements OnInit {
 
   protected edit(item: DataSource): void {
     this.router.navigate(['/datasources/edit', item.guid], { state: { dataSource: item } });
+  }
+
+  protected canOpenDetail(item: DataSource): boolean {
+    return item.connectionStatus === 'connected';
+  }
+
+  protected openDetail(item: DataSource): void {
+    this.router.navigate(['/datasources/detail', item.guid], { state: { dataSource: item } });
   }
 
   protected metrics(): HealthMetric[] {
@@ -183,5 +192,20 @@ export class DataSourceHealthComponent implements OnInit {
 
   private normalizeType(type: string): DataSourceType {
     return type === 'tdengine' || type === 'td' || type === 'taos' ? 'tdengine' : 'mysql';
+  }
+
+  private markConnectionChecking(guid: string): void {
+    const now = Date.now();
+    this.data = this.data.map((item) =>
+      item.guid === guid
+        ? {
+            ...item,
+            connectionStatus: 'checking',
+            connectionCheckedAt: now,
+            connectionError: '',
+          }
+        : item,
+    );
+    this.cdr.markForCheck();
   }
 }

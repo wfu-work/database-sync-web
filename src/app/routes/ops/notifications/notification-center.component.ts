@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   OnInit,
   inject,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { STChange, STColumn } from '@delon/abc/st';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
+import { AppWebSocketService } from '@shared/services/app-websocket.service';
 import { EventNotification } from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { finalize } from 'rxjs';
@@ -25,8 +28,10 @@ import {
 })
 export class NotificationCenterComponent implements OnInit {
   private readonly service = inject(EventNotificationsService);
+  private readonly ws = inject(AppWebSocketService);
   private readonly message = inject(NzMessageService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly q: EventNotificationQuery = {
     page: 1,
@@ -52,6 +57,7 @@ export class NotificationCenterComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.watchNotifications();
     this.getData();
   }
 
@@ -167,5 +173,38 @@ export class NotificationCenterComponent implements OnInit {
       default:
         break;
     }
+  }
+
+  private watchNotifications(): void {
+    this.ws
+      .on<EventNotification>('notification.created')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((item) => this.applyNotification(item));
+  }
+
+  private applyNotification(item: EventNotification): void {
+    if (!item?.guid) return;
+    if (!this.matchesCurrentQuery(item)) return;
+    const index = this.data.findIndex((current) => current.guid === item.guid);
+    if (index >= 0) {
+      this.data = this.data.map((current, itemIndex) => (itemIndex === index ? item : current));
+    } else if (this.q.page === 1) {
+      this.data = [item, ...this.data].slice(0, this.q.size);
+      this.total += 1;
+    }
+    this.cdr.markForCheck();
+  }
+
+  private matchesCurrentQuery(item: EventNotification): boolean {
+    if (this.q.level && item.level !== this.q.level) return false;
+    if (this.q.sourceType && item.sourceType !== this.q.sourceType) return false;
+    if (this.q.read !== '' && String(item.read) !== String(this.q.read)) return false;
+    const keyword = (this.q.keyword || '').trim().toLowerCase();
+    if (!keyword) return true;
+    return [item.guid, item.title, item.content, item.sourceName, item.sourceGuid].some((value) =>
+      String(value || '')
+        .toLowerCase()
+        .includes(keyword),
+    );
   }
 }

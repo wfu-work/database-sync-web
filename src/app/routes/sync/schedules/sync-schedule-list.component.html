@@ -1,6 +1,9 @@
 <section class="schedule-page">
   <div class="page-heading">
-    <title-label title="任务调度" description="查看已装载到调度器的定时任务，并在调整任务后手动重载调度。" />
+    <title-label
+      title="任务调度"
+      description="查看已装载到调度器的定时任务，并在调整任务后手动重载调度。"
+    />
     <div class="page-actions">
       <button nz-button [nzLoading]="reloading" (click)="reloadSchedules()">
         <i nz-icon nzType="reload"></i>
@@ -75,7 +78,9 @@
         <div class="strong">{{ item.name }}</div>
         <div class="muted mono">{{ item.guid }}</div>
         @if (item.task) {
-          <div class="muted truncate-text">{{ item.task.sourceTable }} → {{ item.task.targetTable }}</div>
+          <div class="muted truncate-text">
+            {{ item.task.sourceTable }} → {{ item.task.targetTable }}
+          </div>
         }
       </ng-template>
 

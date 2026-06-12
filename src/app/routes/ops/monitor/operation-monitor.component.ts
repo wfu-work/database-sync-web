@@ -8,13 +8,21 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
-import { DataSource, DatabaseBackup, EventNotification, SyncRun } from '@shared/types/datasync';
+import {
+  DataSource,
+  DatabaseBackup,
+  EventNotification,
+  ServerDiskInfo,
+  SystemMonitorInfo,
+  SyncRun,
+} from '@shared/types/datasync';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 
+import { EventNotificationsService } from '../../../shared/services/event-notifications.service';
 import { DatabaseBackupsService } from '../../backups/database-backups.service';
 import { DataSourcesService } from '../../datasources/datasources.service';
 import { SyncRunsService } from '../../sync/sync-runs.service';
-import { EventNotificationsService } from '../../../shared/services/event-notifications.service';
+import { SystemMonitorService } from '../system-monitor.service';
 
 interface MonitorMetric {
   label: string;
@@ -47,6 +55,7 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
   private readonly backupsService = inject(DatabaseBackupsService);
   private readonly dataSourcesService = inject(DataSourcesService);
   private readonly notificationsService = inject(EventNotificationsService);
+  private readonly systemMonitorService = inject(SystemMonitorService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -60,6 +69,7 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
   protected failedBackups: DatabaseBackup[] = [];
   protected unhealthySources: DataSource[] = [];
   protected unreadNotifications: EventNotification[] = [];
+  protected systemMonitor: SystemMonitorInfo | null = null;
 
   ngOnInit(): void {
     this.getData();
@@ -89,6 +99,7 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
       notifications: this.notificationsService
         .list({ page: 1, size: 6, read: 0 })
         .pipe(catchError(() => of(null))),
+      systemMonitor: this.systemMonitorService.runtime().pipe(catchError(() => of(null))),
     })
       .pipe(
         finalize(() => {
@@ -98,16 +109,27 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         }),
       )
-      .subscribe(({ runningRuns, failedRuns, runningBackups, failedBackups, dataSources, notifications }) => {
-        this.runningRuns = runningRuns?.data ?? [];
-        this.failedRuns = failedRuns?.data ?? [];
-        this.runningBackups = runningBackups?.data ?? [];
-        this.failedBackups = failedBackups?.data ?? [];
-        this.unhealthySources = (dataSources?.data ?? []).filter(
-          (item) => item.connectionStatus === 'failed',
-        );
-        this.unreadNotifications = notifications?.data ?? [];
-      });
+      .subscribe(
+        ({
+          runningRuns,
+          failedRuns,
+          runningBackups,
+          failedBackups,
+          dataSources,
+          notifications,
+          systemMonitor,
+        }) => {
+          this.runningRuns = runningRuns?.data ?? [];
+          this.failedRuns = failedRuns?.data ?? [];
+          this.runningBackups = runningBackups?.data ?? [];
+          this.failedBackups = failedBackups?.data ?? [];
+          this.unhealthySources = (dataSources?.data ?? []).filter(
+            (item) => item.connectionStatus === 'failed',
+          );
+          this.unreadNotifications = notifications?.data ?? [];
+          this.systemMonitor = systemMonitor;
+        },
+      );
   }
 
   protected toggleAutoRefresh(): void {
@@ -185,6 +207,38 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
     return [...syncItems, ...backupItems];
   }
 
+  protected serviceHealthTone(): 'success' | 'warning' | 'danger' | 'idle' {
+    if (!this.systemMonitor) return 'idle';
+    if (this.systemMonitor.warnings?.length) return 'warning';
+    return this.systemMonitor.service.status === 'running' ? 'success' : 'danger';
+  }
+
+  protected cpuPercent(): number {
+    const cpus = this.systemMonitor?.cpu?.cpus ?? [];
+    if (cpus.length === 0) return 0;
+    const total = cpus.reduce((sum, item) => sum + Number(item || 0), 0);
+    return Math.round(total / cpus.length);
+  }
+
+  protected memoryPercent(): number {
+    return this.clampPercent(this.systemMonitor?.ram?.usedPercent ?? 0);
+  }
+
+  protected diskPercent(item: ServerDiskInfo): number {
+    return this.clampPercent(item.usedPercent);
+  }
+
+  protected firstDisk(): ServerDiskInfo | null {
+    return this.systemMonitor?.disk?.[0] ?? null;
+  }
+
+  protected percentStatus(value: number): 'success' | 'exception' | 'active' | 'normal' {
+    if (value >= 90) return 'exception';
+    if (value >= 75) return 'active';
+    if (value <= 50) return 'success';
+    return 'normal';
+  }
+
   protected openLink(link: string): void {
     this.router.navigateByUrl(link);
   }
@@ -222,13 +276,33 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
       item.currentTotal > 0 ? Math.min(1, (item.currentRows || 0) / item.currentTotal) : 0;
     return Math.min(
       99,
-      Math.max(1, Math.round((((item.finishedTables || 0) + currentTableProgress) / item.totalTables) * 100)),
+      Math.max(
+        1,
+        Math.round((((item.finishedTables || 0) + currentTableProgress) / item.totalTables) * 100),
+      ),
     );
   }
 
   protected rowCount(value?: number): string {
     if (!value) return '0';
     return new Intl.NumberFormat('zh-CN').format(value);
+  }
+
+  protected formatBytes(value?: number): string {
+    const bytes = Number(value || 0);
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let index = 0;
+    while (size >= 1024 && index < units.length - 1) {
+      size /= 1024;
+      index += 1;
+    }
+    return `${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(size)} ${units[index]}`;
+  }
+
+  protected formatMb(value?: number): string {
+    return this.formatBytes((value || 0) * 1024 * 1024);
   }
 
   protected formatTime(value?: number): string {
@@ -246,6 +320,14 @@ export class OperationMonitorComponent implements OnInit, OnDestroy {
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
     return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  }
+
+  protected durationSeconds(value?: number): string {
+    return this.duration((value || 0) * 1000);
+  }
+
+  private clampPercent(value: number): number {
+    return Math.max(0, Math.min(100, Math.round(Number(value || 0))));
   }
 
   private scheduleRefresh(): void {

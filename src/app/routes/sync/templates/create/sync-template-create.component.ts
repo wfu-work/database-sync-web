@@ -6,30 +6,27 @@ import {
   inject,
 } from '@angular/core';
 import { NonNullableFormBuilder, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
+import { SHARED_IMPORTS } from '@shared';
 import {
   ColumnInfo,
   DataSource,
   FieldMapping,
-  SaveSyncTaskPayload,
+  SaveSyncTemplatePayload,
   SyncTemplate,
-  SyncTask,
   TagMapping,
   TableInfo,
-  ValidateSyncTaskResult,
 } from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { NZ_MODAL_DATA, NzModalRef } from 'ng-zorro-antd/modal';
 import { finalize } from 'rxjs';
 
-import { DataSourcesService } from '../../datasources/datasources.service';
-import { SyncTasksService } from '../sync-tasks.service';
+import { DataSourcesService } from '../../../datasources/datasources.service';
+import { SyncTasksService } from '../../sync-tasks.service';
 
 const FIELD_SAMPLE = [
   { source: 'created_at', target: 'ts', transform: 'time_to_millis' },
   { source: 'device_id', target: 'device_id' },
   { source: 'temperature', target: 'temperature', transform: 'float' },
-  { target: 'source_type', default: 'mysql' },
 ];
 
 interface TdengineTagRow {
@@ -41,52 +38,49 @@ interface TdengineTagRow {
   comment: string;
 }
 
+interface SyncTemplateModalData {
+  template?: SyncTemplate;
+}
+
 @Component({
-  selector: 'app-sync-task-create',
-  templateUrl: './sync-task-create.component.html',
-  styleUrls: ['./sync-task-create.component.less'],
+  selector: 'app-sync-template-create',
+  templateUrl: './sync-template-create.component.html',
+  styleUrls: ['./sync-template-create.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SHARED_IMPORTS, TitleLabelComponent],
+  imports: [SHARED_IMPORTS],
 })
-export class SyncTaskCreateComponent implements OnInit {
+export class SyncTemplateCreateComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly taskService = inject(SyncTasksService);
+  private readonly service = inject(SyncTasksService);
   private readonly dataSourcesService = inject(DataSourcesService);
   private readonly message = inject(NzMessageService);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly modalRef = inject(NzModalRef, { optional: true });
+  private readonly modalData = inject<SyncTemplateModalData>(NZ_MODAL_DATA, { optional: true });
   private readonly cdr = inject(ChangeDetectorRef);
 
-  protected taskGuid = '';
-  protected loadingTask = false;
   protected dataSources: DataSource[] = [];
   protected sourceTables: TableInfo[] = [];
   protected targetTables: TableInfo[] = [];
   protected sourceColumns: ColumnInfo[] = [];
   protected targetColumns: ColumnInfo[] = [];
-  protected templates: SyncTemplate[] = [];
-  protected selectedTemplateGuid = '';
   protected saving = false;
-  protected templateLoading = false;
   protected sourceTableLoading = false;
   protected targetTableLoading = false;
   protected sourceColumnLoading = false;
   protected targetColumnLoading = false;
-  protected validationLoading = false;
-  protected formError = '';
   protected fieldError = '';
   protected tagError = '';
+  protected formError = '';
   protected tagRows: TdengineTagRow[] = [];
-  protected validationResult: ValidateSyncTaskResult | null = null;
-  protected columnDrawerVisible = false;
-  protected columnDrawerKind: 'source' | 'target' = 'source';
+  protected template: SyncTemplate | null = null;
 
   protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(128)]],
-    sourceGuid: ['', [Validators.required]],
-    targetGuid: ['', [Validators.required]],
-    sourceTable: ['', [Validators.required, Validators.maxLength(255)]],
-    targetTable: ['', [Validators.required, Validators.maxLength(255)]],
+    description: ['', [Validators.maxLength(512)]],
+    sourceGuid: [''],
+    targetGuid: [''],
+    sourceTable: ['', [Validators.maxLength(255)]],
+    targetTable: ['', [Validators.maxLength(255)]],
     mode: this.fb.control<'full' | 'incremental'>('full', [Validators.required]),
     cursorField: ['', [Validators.maxLength(128)]],
     cursorValue: ['', [Validators.maxLength(255)]],
@@ -107,81 +101,13 @@ export class SyncTaskCreateComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.taskGuid = this.route.snapshot.paramMap.get('guid') || '';
+    this.template = this.modalData?.template ?? null;
     this.loadDataSources();
-    if (this.editingTask) {
-      this.loadTask();
-    } else {
-      this.loadTemplates();
-      const template = history.state?.template as SyncTemplate | undefined;
-      if (template?.guid) {
-        this.applyTemplate(template);
-      }
+    if (this.template) {
+      this.patchTemplate(this.template);
+      if (this.template.sourceGuid) this.loadTables('source', this.template.sourceTable || '');
+      if (this.template.targetGuid) this.loadTables('target', this.template.targetTable || '');
     }
-  }
-
-  protected resetForm(): void {
-    this.formError = '';
-    this.fieldError = '';
-    this.tagError = '';
-    this.tagRows = [];
-    this.validationResult = null;
-    this.selectedTemplateGuid = '';
-    this.resetMetadata();
-    this.form.reset({
-      name: '',
-      sourceGuid: '',
-      targetGuid: '',
-      sourceTable: '',
-      targetTable: '',
-      mode: 'full',
-      cursorField: '',
-      cursorValue: '',
-      batchSize: 1000,
-      writeMode: 'insert',
-      conflictKeys: '',
-      whereClause: '',
-      syncTimeField: '',
-      syncStartDate: '',
-      syncEndDate: '',
-      tdengineChildTableTemplate: '',
-      tdengineTags: '',
-      scheduleOn: 0,
-      cronExpr: '',
-      fieldsText: JSON.stringify(FIELD_SAMPLE, null, 2),
-      remark: '',
-      status: 1,
-    });
-  }
-
-  protected goList(): void {
-    this.router.navigate(['/sync/tasks/list']);
-  }
-
-  protected goTemplates(): void {
-    this.router.navigate(['/sync/templates']);
-  }
-
-  protected get editingTask(): boolean {
-    return this.taskGuid !== '';
-  }
-
-  protected get pageTitle(): string {
-    return this.editingTask ? '编辑任务' : '新建任务';
-  }
-
-  protected get pageDescription(): string {
-    return this.editingTask
-      ? '调整同步任务配置，保存前可先校验源表、目标表和字段映射。'
-      : '配置源表、目标表、同步模式、字段映射和写入策略。';
-  }
-
-  protected get formTitle(): string {
-    return this.editingTask ? '编辑同步任务' : '新建同步任务';
-  }
-
-  protected get submitText(): string {
-    return this.editingTask ? '保存修改' : '创建任务';
   }
 
   protected get scheduleEnabled(): boolean {
@@ -216,15 +142,8 @@ export class SyncTaskCreateComponent implements OnInit {
     }
   }
 
-  protected onTemplateChange(guid: string): void {
-    const template = this.templates.find((item) => item.guid === guid);
-    if (!template) return;
-    this.applyTemplate(template);
-  }
-
-  protected onSourceDataSourceChange(guid: string): void {
+  protected onSourceDataSourceChange(guid: string | null): void {
     this.form.controls.sourceTable.setValue('');
-    this.form.controls.cursorField.setValue('');
     this.form.controls.syncTimeField.setValue('');
     this.form.controls.syncStartDate.setValue('');
     this.form.controls.syncEndDate.setValue('');
@@ -233,7 +152,7 @@ export class SyncTaskCreateComponent implements OnInit {
     if (guid) this.loadTables('source');
   }
 
-  protected onTargetDataSourceChange(guid: string): void {
+  protected onTargetDataSourceChange(guid: string | null): void {
     this.form.controls.targetTable.setValue('');
     this.form.controls.tdengineChildTableTemplate.setValue('');
     this.form.controls.tdengineTags.setValue('');
@@ -244,13 +163,13 @@ export class SyncTaskCreateComponent implements OnInit {
     if (guid) this.loadTables('target');
   }
 
-  protected onSourceTableChange(table: string): void {
+  protected onSourceTableChange(table: string | null): void {
     this.sourceColumns = [];
     this.form.controls.syncTimeField.setValue('');
     if (table) this.loadColumns('source', table);
   }
 
-  protected onTargetTableChange(table: string): void {
+  protected onTargetTableChange(table: string | null): void {
     this.targetColumns = [];
     this.form.controls.tdengineTags.setValue('');
     this.tagRows = [];
@@ -291,32 +210,11 @@ export class SyncTaskCreateComponent implements OnInit {
   }
 
   protected refreshSourceTables(): void {
-    this.loadTables('source', this.form.controls.sourceTable.value);
+    this.loadTables('source', this.form.controls.sourceTable.value || '');
   }
 
   protected refreshTargetTables(): void {
-    this.loadTables('target', this.form.controls.targetTable.value);
-  }
-
-  protected openColumnDrawer(kind: 'source' | 'target'): void {
-    const table =
-      kind === 'source'
-        ? this.form.controls.sourceTable.value
-        : this.form.controls.targetTable.value;
-    if (!table?.trim()) {
-      this.message.warning(kind === 'source' ? '请先选择源表' : '请先选择目标表');
-      return;
-    }
-    this.columnDrawerKind = kind;
-    this.columnDrawerVisible = true;
-    const columns = kind === 'source' ? this.sourceColumns : this.targetColumns;
-    if (columns.length === 0) {
-      this.loadColumns(kind, table);
-    }
-  }
-
-  protected closeColumnDrawer(): void {
-    this.columnDrawerVisible = false;
+    this.loadTables('target', this.form.controls.targetTable.value || '');
   }
 
   protected generateSameNameMapping(): void {
@@ -346,6 +244,11 @@ export class SyncTaskCreateComponent implements OnInit {
     this.message.success(`已生成 ${fields.length} 个同名字段映射`);
   }
 
+  protected columnSummary(columns: ColumnInfo[]): string {
+    if (columns.length === 0) return '未读取';
+    return columns.map((column) => column.name).join(', ');
+  }
+
   protected submit(): void {
     this.formError = '';
     this.fieldError = '';
@@ -356,13 +259,12 @@ export class SyncTaskCreateComponent implements OnInit {
       });
       return;
     }
-
     const payload = this.toPayload();
     if (!payload) return;
 
     this.saving = true;
-    this.taskService
-      .save(payload, this.taskGuid || undefined)
+    this.service
+      .saveTemplate(payload, this.template?.guid)
       .pipe(
         finalize(() => {
           this.saving = false;
@@ -371,197 +273,68 @@ export class SyncTaskCreateComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.message.success(this.editingTask ? '同步任务已更新' : '同步任务已创建');
-          this.goList();
+          this.message.success(this.template ? '同步模板已更新' : '同步模板已创建');
+          this.modalRef?.close(true);
         },
-        error: (err) => this.message.error(err?.msg || err?.message || '保存同步任务失败'),
+        error: (err) => this.message.error(err?.msg || err?.message || '保存同步模板失败'),
       });
   }
 
-  protected validateForm(): void {
-    this.formError = '';
-    this.fieldError = '';
-    const payload = this.toPayload();
-    if (!payload) return;
-
-    this.validationLoading = true;
-    this.taskService
-      .validate(payload)
-      .pipe(
-        finalize(() => {
-          this.validationLoading = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => this.showValidation(res),
-        error: (err) => this.message.error(err?.msg || err?.message || '校验同步任务失败'),
-      });
-  }
-
-  protected columnSummary(columns: ColumnInfo[]): string {
-    if (columns.length === 0) return '未读取';
-    return columns.map((column) => column.name).join(', ');
-  }
-
-  protected modeLabel(mode: string): string {
-    return mode === 'incremental' ? '增量' : '全量';
-  }
-
-  protected drawerTitle(): string {
-    const prefix = this.columnDrawerKind === 'source' ? '源表字段' : '目标表字段';
-    const table =
-      this.columnDrawerKind === 'source'
-        ? this.form.controls.sourceTable.value
-        : this.form.controls.targetTable.value;
-    return table ? `${prefix} · ${table}` : prefix;
-  }
-
-  protected drawerColumns(): ColumnInfo[] {
-    return this.columnDrawerKind === 'source' ? this.sourceColumns : this.targetColumns;
-  }
-
-  protected drawerLoading(): boolean {
-    return this.columnDrawerKind === 'source' ? this.sourceColumnLoading : this.targetColumnLoading;
+  protected cancel(): void {
+    this.modalRef?.close(false);
   }
 
   private loadDataSources(): void {
-    this.dataSourcesService.list({ all: true }).subscribe((res) => {
-      this.dataSources = res.data ?? [];
-      this.cdr.markForCheck();
+    this.dataSourcesService.list({ all: true }).subscribe({
+      next: (res) => {
+        this.dataSources = res.data ?? [];
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.dataSources = [];
+        this.cdr.markForCheck();
+      },
     });
   }
 
-  private loadTask(): void {
-    this.loadingTask = true;
-    this.taskService
-      .get(this.taskGuid)
-      .pipe(
-        finalize(() => {
-          this.loadingTask = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (task) => {
-          this.patchTask(task);
-          if (task.sourceGuid) this.loadTables('source', task.sourceTable || '');
-          if (task.targetGuid) this.loadTables('target', task.targetTable || '');
-          if (this.route.snapshot.queryParamMap.get('validate') === '1') {
-            setTimeout(() => this.validateForm());
-          }
-        },
-        error: (err) => {
-          this.message.error(err?.msg || err?.message || '读取同步任务失败');
-          this.goList();
-        },
-      });
-  }
-
-  private patchTask(task: SyncTask): void {
-    this.formError = '';
-    this.fieldError = '';
+  private patchTemplate(item: SyncTemplate): void {
     this.tagError = '';
     this.tagRows = [];
-    this.validationResult = null;
-    this.resetMetadata();
     this.form.reset({
-      name: task.name || '',
-      sourceGuid: task.sourceGuid || '',
-      targetGuid: task.targetGuid || '',
-      sourceTable: task.sourceTable || '',
-      targetTable: task.targetTable || '',
-      mode: task.mode === 'incremental' ? 'incremental' : 'full',
-      cursorField: task.cursorField || '',
-      cursorValue: task.cursorValue || '',
-      batchSize: task.batchSize || 1000,
-      writeMode: this.normalizeWriteMode(task.writeMode),
-      conflictKeys: task.conflictKeys || '',
-      whereClause: task.whereClause || '',
-      syncTimeField: task.syncTimeField || '',
-      syncStartDate: task.syncStartDate || '',
-      syncEndDate: task.syncEndDate || '',
+      name: item.name,
+      description: item.description || '',
+      sourceGuid: item.sourceGuid || '',
+      targetGuid: item.targetGuid || '',
+      sourceTable: item.sourceTable || '',
+      targetTable: item.targetTable || '',
+      mode: item.mode === 'incremental' ? 'incremental' : 'full',
+      cursorField: item.cursorField || '',
+      cursorValue: item.cursorValue || '',
+      batchSize: item.batchSize || 1000,
+      writeMode: this.normalizeWriteMode(item.writeMode),
+      conflictKeys: item.conflictKeys || '',
+      whereClause: item.whereClause || '',
+      syncTimeField: item.syncTimeField || '',
+      syncStartDate: item.syncStartDate || '',
+      syncEndDate: item.syncEndDate || '',
       tdengineChildTableTemplate:
-        task.tdengineChildTableTemplate || task.tdengineChildTableField || '',
-      tdengineTags: this.prettyJson(task.tdengineTags, []),
-      scheduleOn: Number(task.scheduleOn) || 0,
-      cronExpr: task.cronExpr || '',
-      fieldsText: this.prettyFields(task.fieldMapping),
-      remark: task.remark || '',
-      status: task.status ?? 1,
+        item.tdengineChildTableTemplate || item.tdengineChildTableField || '',
+      tdengineTags: this.prettyJson(item.tdengineTags, []),
+      scheduleOn: Number(item.scheduleOn) || 0,
+      cronExpr: item.cronExpr || '',
+      fieldsText: this.prettyFields(item.fieldMapping),
+      remark: item.remark || '',
+      status: item.status ?? 1,
     });
-  }
-
-  private loadTemplates(): void {
-    this.templateLoading = true;
-    this.taskService
-      .templateList({ all: true, status: 1 })
-      .pipe(
-        finalize(() => {
-          this.templateLoading = false;
-          this.cdr.markForCheck();
-        }),
-      )
-      .subscribe({
-        next: (res) => {
-          this.templates = res.data ?? [];
-          const stateTemplate = history.state?.template as SyncTemplate | undefined;
-          if (
-            stateTemplate?.guid &&
-            !this.templates.some((item) => item.guid === stateTemplate.guid)
-          ) {
-            this.templates = [stateTemplate, ...this.templates];
-          }
-        },
-        error: () => {
-          this.templates = [];
-        },
-      });
-  }
-
-  private applyTemplate(template: SyncTemplate): void {
-    this.selectedTemplateGuid = template.guid;
-    this.formError = '';
-    this.fieldError = '';
-    this.tagError = '';
-    this.tagRows = [];
-    this.validationResult = null;
-    this.resetMetadata();
-    this.form.patchValue({
-      name: template.name ? `${template.name}任务` : '',
-      sourceGuid: template.sourceGuid || '',
-      targetGuid: template.targetGuid || '',
-      sourceTable: template.sourceTable || '',
-      targetTable: template.targetTable || '',
-      mode: template.mode === 'incremental' ? 'incremental' : 'full',
-      cursorField: template.cursorField || '',
-      cursorValue: template.cursorValue || '',
-      batchSize: template.batchSize || 1000,
-      writeMode: this.normalizeWriteMode(template.writeMode),
-      conflictKeys: template.conflictKeys || '',
-      whereClause: template.whereClause || '',
-      syncTimeField: template.syncTimeField || '',
-      syncStartDate: template.syncStartDate || '',
-      syncEndDate: template.syncEndDate || '',
-      tdengineChildTableTemplate:
-        template.tdengineChildTableTemplate || template.tdengineChildTableField || '',
-      tdengineTags: this.prettyJson(template.tdengineTags, []),
-      scheduleOn: Number(template.scheduleOn) || 0,
-      cronExpr: template.cronExpr || '',
-      fieldsText: this.prettyFields(template.fieldMapping),
-      remark: template.remark || template.description || '',
-      status: template.status ?? 1,
-    });
-    if (template.sourceGuid) this.loadTables('source', template.sourceTable || '');
-    if (template.targetGuid) this.loadTables('target', template.targetTable || '');
-    this.message.success(`已套用模板「${template.name}」`);
-    this.cdr.markForCheck();
   }
 
   private loadTables(kind: 'source' | 'target', selectedTable = ''): void {
     const guid =
       kind === 'source' ? this.form.controls.sourceGuid.value : this.form.controls.targetGuid.value;
-    if (!guid) return;
+    if (!guid) {
+      this.message.warning(kind === 'source' ? '请先选择源数据源' : '请先选择目标数据源');
+      return;
+    }
 
     if (kind === 'source') {
       this.sourceTableLoading = true;
@@ -589,15 +362,21 @@ export class SyncTaskCreateComponent implements OnInit {
               : this.form.controls.targetGuid.value;
           if (currentGuid !== guid) return;
 
+          const value = selectedTable.trim();
+          const tables = items ?? [];
+          const normalized =
+            !value || tables.some((item) => item.name === value)
+              ? tables
+              : [{ name: value, type: '', comment: '模板预填表' }, ...tables];
+
           if (kind === 'source') {
-            this.sourceTables = items ?? [];
+            this.sourceTables = normalized;
           } else {
-            this.targetTables = items ?? [];
+            this.targetTables = normalized;
           }
 
-          const table = selectedTable || '';
-          if (table) {
-            this.loadColumns(kind, table);
+          if (value) {
+            this.loadColumns(kind, value);
           }
         },
         error: (err) => this.message.error(err?.msg || err?.message || '读取数据表失败'),
@@ -654,49 +433,33 @@ export class SyncTaskCreateComponent implements OnInit {
       });
   }
 
-  private resetMetadata(): void {
-    this.sourceTables = [];
-    this.targetTables = [];
-    this.sourceColumns = [];
-    this.targetColumns = [];
-  }
-
-  private toPayload(): SaveSyncTaskPayload | null {
+  private toPayload(): SaveSyncTemplatePayload | null {
     const value = this.form.getRawValue();
     const scheduleOn = Number(value.scheduleOn);
     if (scheduleOn === 1 && !value.cronExpr.trim()) {
-      this.formError = '启用定时执行时必须填写 Cron 表达式';
+      this.formError = '启用定时时必须填写 Cron 表达式';
       return null;
     }
     if (value.mode === 'incremental' && !value.cursorField.trim()) {
-      this.formError = '增量同步必须填写游标字段';
-      return null;
-    }
-    if (this.tdengineSourceSelected && !value.syncTimeField.trim()) {
-      this.formError = 'TDengine 源库同步必须填写时间字段';
-      return null;
-    }
-    if (this.tdengineSourceSelected && !value.syncStartDate.trim()) {
-      this.formError = 'TDengine 源库同步必须填写开始日期';
+      this.formError = '增量模板必须填写游标字段';
       return null;
     }
     if (this.tdengineTargetSelected && !value.tdengineChildTableTemplate.trim()) {
       this.formError = 'TDengine 目标库必须填写子表名模板';
       return null;
     }
-
     const fields = this.parseFields(value.fieldsText);
     if (!fields) return null;
     const tdengineTags = this.tdengineTargetSelected ? this.buildTagMappings() : [];
     if (tdengineTags === null) return null;
     const tdengineTagsText = this.tdengineTargetSelected ? JSON.stringify(tdengineTags) : '';
-
     return {
       name: value.name.trim(),
+      description: value.description.trim(),
       sourceGuid: value.sourceGuid,
       targetGuid: value.targetGuid,
-      sourceTable: value.sourceTable.trim(),
-      targetTable: value.targetTable.trim(),
+      sourceTable: (value.sourceTable || '').trim(),
+      targetTable: (value.targetTable || '').trim(),
       mode: value.mode,
       cursorField: value.cursorField.trim(),
       cursorValue: value.cursorValue.trim(),
@@ -718,27 +481,6 @@ export class SyncTaskCreateComponent implements OnInit {
       scheduleOn,
       remark: value.remark.trim(),
       status: Number(value.status),
-    };
-  }
-
-  private showValidation(result: ValidateSyncTaskResult): void {
-    const normalized = this.normalizeValidationResult(result);
-    this.validationResult = normalized;
-    if (normalized.valid) {
-      this.message.success('同步任务配置校验通过');
-    } else {
-      this.message.warning('同步任务配置存在问题');
-    }
-  }
-
-  private normalizeValidationResult(result: ValidateSyncTaskResult): ValidateSyncTaskResult {
-    return {
-      ...result,
-      errors: result.errors ?? [],
-      sourceColumns: result.sourceColumns ?? [],
-      targetColumns: result.targetColumns ?? [],
-      missingSourceFields: result.missingSourceFields ?? [],
-      missingTargetFields: result.missingTargetFields ?? [],
     };
   }
 
@@ -818,7 +560,6 @@ export class SyncTaskCreateComponent implements OnInit {
       this.tagError = '目标超级表没有读取到 TAG 字段，请确认选择的是超级表';
       return null;
     }
-    const mappings: TagMapping[] = [];
     const invalidIndex = this.tagRows.findIndex(
       (tag) => !tag.source.trim() && !tag.defaultValue.trim(),
     );
@@ -826,7 +567,7 @@ export class SyncTaskCreateComponent implements OnInit {
       this.tagError = `TAG「${this.tagRows[invalidIndex].name}」必须选择来源字段或填写默认值`;
       return null;
     }
-    for (const tag of this.tagRows) {
+    const mappings: TagMapping[] = this.tagRows.map((tag) => {
       const mapping: TagMapping = { name: tag.name };
       if (tag.source.trim()) {
         mapping.source = tag.source.trim();
@@ -836,8 +577,8 @@ export class SyncTaskCreateComponent implements OnInit {
       if (tag.transform.trim()) {
         mapping.transform = tag.transform.trim();
       }
-      mappings.push(mapping);
-    }
+      return mapping;
+    });
     this.tagError = '';
     this.form.controls.tdengineTags.setValue(JSON.stringify(mappings, null, 2));
     return mappings;

@@ -1,0 +1,288 @@
+<section class="sync-template-create">
+  <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+    <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+      <sv label="模板名称 *">
+        <input nz-input formControlName="name" placeholder="例如：设备数据同步模板" />
+      </sv>
+      <sv label="状态">
+        <nz-select formControlName="status">
+          <nz-option [nzValue]="1" nzLabel="启用" />
+          <nz-option [nzValue]="0" nzLabel="禁用" />
+        </nz-select>
+      </sv>
+      <sv label="模板说明" [col]="1">
+        <textarea
+          nz-input
+          rows="2"
+          formControlName="description"
+          placeholder="说明适用的数据链路、表结构或业务场景"
+        ></textarea>
+      </sv>
+      <sv label="源数据源">
+        <nz-select
+          formControlName="sourceGuid"
+          nzShowSearch
+          nzAllowClear
+          (ngModelChange)="onSourceDataSourceChange($event)"
+        >
+          @for (item of dataSources; track item.guid) {
+            <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+          }
+        </nz-select>
+      </sv>
+      <sv label="目标数据源">
+        <nz-select
+          formControlName="targetGuid"
+          nzShowSearch
+          nzAllowClear
+          (ngModelChange)="onTargetDataSourceChange($event)"
+        >
+          @for (item of dataSources; track item.guid) {
+            <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+          }
+        </nz-select>
+      </sv>
+      <sv label="源表">
+        <span class="table-picker">
+          <nz-select
+            formControlName="sourceTable"
+            nzShowSearch
+            nzAllowClear
+            nzPlaceHolder="默认空，可同步获取源表"
+            [nzLoading]="sourceTableLoading"
+            [nzDisabled]="!form.controls.sourceGuid.value"
+            (ngModelChange)="onSourceTableChange($event)"
+          >
+            @for (table of sourceTables; track table.name) {
+              <nz-option
+                [nzValue]="table.name"
+                [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+              />
+            }
+          </nz-select>
+          <button
+            nz-button
+            type="button"
+            [nzLoading]="sourceTableLoading"
+            [disabled]="!form.controls.sourceGuid.value"
+            (click)="refreshSourceTables()"
+          >
+            <i nz-icon nzType="sync"></i>
+          </button>
+        </span>
+        <span class="metadata-line" [class.loading]="sourceColumnLoading">
+          源字段：{{ columnSummary(sourceColumns) }}
+        </span>
+      </sv>
+      <sv label="目标表">
+        <span class="table-picker">
+          <nz-select
+            formControlName="targetTable"
+            nzShowSearch
+            nzAllowClear
+            nzPlaceHolder="默认空，可同步获取目标表"
+            [nzLoading]="targetTableLoading"
+            [nzDisabled]="!form.controls.targetGuid.value"
+            (ngModelChange)="onTargetTableChange($event)"
+          >
+            @for (table of targetTables; track table.name) {
+              <nz-option
+                [nzValue]="table.name"
+                [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+              />
+            }
+          </nz-select>
+          <button
+            nz-button
+            type="button"
+            [nzLoading]="targetTableLoading"
+            [disabled]="!form.controls.targetGuid.value"
+            (click)="refreshTargetTables()"
+          >
+            <i nz-icon nzType="sync"></i>
+          </button>
+        </span>
+        <span class="metadata-line" [class.loading]="targetColumnLoading">
+          目标字段：{{ columnSummary(targetColumns) }}
+        </span>
+      </sv>
+    </sv-container>
+
+    <sv-container class="form-sv" layout="vertical" [col]="3" [gutter]="16" noColon>
+      <sv label="模式 *">
+        <nz-select formControlName="mode">
+          <nz-option nzValue="full" nzLabel="全量同步" />
+          <nz-option nzValue="incremental" nzLabel="增量同步" />
+        </nz-select>
+      </sv>
+      <sv label="批次大小 *">
+        <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
+      </sv>
+      <sv label="写入模式 *">
+        <nz-select formControlName="writeMode">
+          <nz-option nzValue="insert" nzLabel="insert" />
+          <nz-option nzValue="upsert" nzLabel="upsert" />
+          <nz-option nzValue="replace" nzLabel="replace" />
+        </nz-select>
+      </sv>
+    </sv-container>
+
+    <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+      <sv label="游标字段">
+        <input nz-input formControlName="cursorField" placeholder="增量模式必填，例如 id" />
+      </sv>
+      <sv label="默认游标值">
+        <input nz-input formControlName="cursorValue" placeholder="可留空" />
+      </sv>
+      <sv label="冲突字段">
+        <input nz-input formControlName="conflictKeys" placeholder="upsert 时使用，逗号分隔" />
+      </sv>
+      <sv label="定时执行">
+        <nz-select formControlName="scheduleOn">
+          <nz-option [nzValue]="0" nzLabel="手动执行" />
+          <nz-option [nzValue]="1" nzLabel="启用定时" />
+        </nz-select>
+      </sv>
+      @if (scheduleEnabled) {
+        <sv label="Cron 表达式">
+          <input nz-input formControlName="cronExpr" placeholder="例如：0 */5 * * * *" />
+        </sv>
+      }
+      <sv label="源表过滤条件" [col]="2">
+        <textarea
+          nz-input
+          formControlName="whereClause"
+          rows="2"
+          placeholder="例如：deleted = 0"
+        ></textarea>
+      </sv>
+      @if (tdengineSourceSelected) {
+        <sv label="同步时间字段">
+          <input nz-input formControlName="syncTimeField" placeholder="例如：gps_time 或 time" />
+        </sv>
+        <sv label="同步开始日期">
+          <input nz-input formControlName="syncStartDate" placeholder="例如：2026-06-01" />
+        </sv>
+        <sv label="同步结束日期">
+          <input
+            nz-input
+            formControlName="syncEndDate"
+            placeholder="默认当前时间，例如：2026-06-12"
+          />
+        </sv>
+      }
+      @if (tdengineTargetSelected) {
+        <sv label="目标子表名模板">
+          <input
+            nz-input
+            formControlName="tdengineChildTableTemplate"
+            placeholder="例如：kalman_${rover_name}_${base_name}"
+          />
+        </sv>
+        <sv label="目标 TAG 配置" [col]="1">
+          <span class="field-toolbar">
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              type="button"
+              (click)="generateSameNameTags()"
+            >
+              同名 TAG
+            </button>
+            <button nz-button nzType="link" nzSize="small" type="button" (click)="clearTagValues()">
+              清空
+            </button>
+          </span>
+          @if (tagRows.length > 0) {
+            <div class="tag-mapping-list" [class.field-invalid-box]="tagError">
+              @for (tag of tagRows; track tag.name) {
+                <div class="tag-mapping-row">
+                  <div class="tag-meta">
+                    <strong>{{ tag.name }}</strong>
+                    <span>{{ tag.databaseType || 'TAG' }}</span>
+                    @if (tag.comment) {
+                      <em>{{ tag.comment }}</em>
+                    }
+                  </div>
+                  <nz-select
+                    [(ngModel)]="tag.source"
+                    [ngModelOptions]="{ standalone: true }"
+                    nzAllowClear
+                    nzShowSearch
+                    nzPlaceHolder="来源字段"
+                    (ngModelChange)="onTagRowChange()"
+                  >
+                    @for (column of sourceColumns; track column.name) {
+                      <nz-option [nzValue]="column.name" [nzLabel]="column.name" />
+                    }
+                  </nz-select>
+                  <input
+                    nz-input
+                    [(ngModel)]="tag.defaultValue"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="默认值"
+                    (ngModelChange)="onTagRowChange()"
+                  />
+                  <input
+                    nz-input
+                    [(ngModel)]="tag.transform"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="转换"
+                    (ngModelChange)="onTagRowChange()"
+                  />
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="tag-empty-state">选择 TDengine 目标超级表后，会自动读取 TAG 结构。</div>
+          }
+          @if (tagError) {
+            <span class="field-error">{{ tagError }}</span>
+          }
+        </sv>
+      }
+      <sv label="备注" [col]="1">
+        <textarea nz-input formControlName="remark" rows="2"></textarea>
+      </sv>
+      <sv label="字段映射 JSON *" [col]="1">
+        <span class="field-toolbar">
+          <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
+            插入示例
+          </button>
+          <button nz-button nzType="link" nzSize="small" type="button" (click)="formatFieldsJson()">
+            格式化
+          </button>
+          <button
+            nz-button
+            nzType="link"
+            nzSize="small"
+            type="button"
+            (click)="generateSameNameMapping()"
+          >
+            同名字段
+          </button>
+        </span>
+        <textarea
+          nz-input
+          formControlName="fieldsText"
+          rows="12"
+          spellcheck="false"
+          [class.field-invalid]="fieldError"
+        ></textarea>
+        @if (fieldError) {
+          <span class="field-error">{{ fieldError }}</span>
+        }
+      </sv>
+    </sv-container>
+
+    @if (formError) {
+      <nz-alert class="form-error" nzType="warning" nzShowIcon [nzMessage]="formError" />
+    }
+
+    <div class="form-actions">
+      <button nz-button type="button" (click)="cancel()">取消</button>
+      <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">保存模板</button>
+    </div>
+  </form>
+</section>

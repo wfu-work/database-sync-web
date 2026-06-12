@@ -6,6 +6,21 @@
  * Note: The proxy is only valid for real requests, Mock does not actually generate requests, so the priority of Mock will be higher than the proxy
  */
 module.exports = {
+  '/dev/ws': {
+    target: 'http://127.0.0.1:3010',
+    secure: false,
+    ws: true,
+    pathRewrite: {
+      '^/dev/ws$': '/api/ws',
+    },
+    changeOrigin: true,
+  },
+  '/api/ws': {
+    target: 'http://127.0.0.1:3010',
+    secure: false,
+    ws: true,
+    changeOrigin: true,
+  },
   '/api/': {
     target: 'http://127.0.0.1:3010/api/',
     secure: false,

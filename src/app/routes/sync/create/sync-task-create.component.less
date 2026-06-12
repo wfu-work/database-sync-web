@@ -49,6 +49,41 @@
   color: #1d2b3f;
 }
 
+.template-picker {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.template-picker > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.template-picker strong {
+  font-weight: 800;
+  color: #1f2a3d;
+}
+
+.template-picker span {
+  overflow: hidden;
+  font-size: 12px;
+  color: #6b778c;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-picker nz-select {
+  width: 100%;
+}
+
 .sv-form {
   display: grid;
   gap: 14px;
@@ -150,6 +185,70 @@ textarea[formControlName='fieldsText'] {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.tag-mapping-list {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e5eaf3;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.tag-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(160px, 1fr) minmax(140px, 0.9fr) minmax(120px, 0.7fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.tag-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tag-meta strong,
+.tag-meta span,
+.tag-meta em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-meta strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1d2b3f;
+}
+
+.tag-meta span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tag-meta em {
+  font-size: 12px;
+  font-style: normal;
+  color: #94a3b8;
+}
+
+.tag-empty-state {
+  padding: 16px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.field-invalid-box {
+  border-color: #ff4d4f;
+}
+
 .field-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -236,8 +335,8 @@ textarea[formControlName='fieldsText'] {
 .context-panel {
   display: grid;
   gap: 14px;
-  min-width: 0;
   align-content: start;
+  min-width: 0;
 }
 
 .context-block {
@@ -278,8 +377,8 @@ textarea[formControlName='fieldsText'] {
   max-width: 620px;
   margin: 0;
   padding: 0;
-  color: #5d687a;
   line-height: 1.7;
+  color: #5d687a;
   list-style: none;
 }
 
@@ -300,8 +399,8 @@ textarea[formControlName='fieldsText'] {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  color: #41516a;
   font-weight: 700;
+  color: #41516a;
 }
 
 .flow-line span {
@@ -343,8 +442,8 @@ textarea[formControlName='fieldsText'] {
 }
 
 .mode-notes span {
-  color: #5d687a;
   line-height: 1.65;
+  color: #5d687a;
 }
 
 .column-drawer {
@@ -370,9 +469,9 @@ textarea[formControlName='fieldsText'] {
 }
 
 .drawer-heading span {
-  color: #6b778c;
   font-size: 13px;
   font-weight: 700;
+  color: #6b778c;
 }
 
 .schema-list {
@@ -402,34 +501,34 @@ textarea[formControlName='fieldsText'] {
 
 .schema-row strong {
   overflow: hidden;
-  color: #1d2b3f;
   font-size: 15px;
   font-weight: 800;
   line-height: 1.35;
+  color: #1d2b3f;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .schema-row span {
   margin-top: 3px;
-  color: #64748b;
   font-size: 12px;
   line-height: 1.4;
+  color: #64748b;
 }
 
 .schema-row em {
-  color: #334155;
-  font-style: normal;
   font-weight: 800;
+  font-style: normal;
+  color: #334155;
   white-space: nowrap;
 }
 
 .schema-row code {
   padding: 3px 7px;
   border-radius: 6px;
-  color: var(--nm-primary);
   font-size: 12px;
   font-weight: 800;
+  color: var(--nm-primary);
   background: rgb(var(--nm-primary-rgb) / 10%);
 }
 
@@ -445,6 +544,10 @@ textarea[formControlName='fieldsText'] {
   .create-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .template-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 767px) {
@@ -456,5 +559,9 @@ textarea[formControlName='fieldsText'] {
 
   .validation-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tag-mapping-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

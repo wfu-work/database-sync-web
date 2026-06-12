@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  OnDestroy,
+  DestroyRef,
   OnInit,
   inject,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { STChange, STColumn } from '@delon/abc/st';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
+import { AppWebSocketService } from '@shared/services/app-websocket.service';
 import { DataSource, DatabaseBackup } from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { finalize } from 'rxjs';
@@ -22,12 +24,13 @@ import { DatabaseBackupsService } from '../database-backups.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SHARED_IMPORTS, TitleLabelComponent],
 })
-export class DatabaseBackupListComponent implements OnInit, OnDestroy {
+export class DatabaseBackupListComponent implements OnInit {
   private readonly backupsService = inject(DatabaseBackupsService);
   private readonly dataSourcesService = inject(DataSourcesService);
+  private readonly ws = inject(AppWebSocketService);
   private readonly message = inject(NzMessageService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly q = {
     page: 1,
@@ -60,16 +63,12 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDataSources();
+    this.watchBackupUpdates();
     this.getData();
-  }
-
-  ngOnDestroy(): void {
-    this.clearRefreshTimer();
   }
 
   protected getData(): void {
     this.loading = true;
-    this.clearRefreshTimer();
     this.backupsService
       .list(this.q)
       .pipe(
@@ -84,7 +83,6 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
           this.total = res.total ?? 0;
           this.q.page = res.page || this.q.page;
           this.q.size = res.size || this.q.size;
-          this.scheduleRefreshIfNeeded();
         },
         error: (err) => this.message.error(err?.msg || err?.message || '读取备份列表失败'),
       });
@@ -342,17 +340,6 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
     });
   }
 
-  private scheduleRefreshIfNeeded(): void {
-    if (!this.data.some((item) => item.status === 'pending' || item.status === 'running')) return;
-    this.refreshTimer = setTimeout(() => this.getData(), 5000);
-  }
-
-  private clearRefreshTimer(): void {
-    if (!this.refreshTimer) return;
-    clearTimeout(this.refreshTimer);
-    this.refreshTimer = null;
-  }
-
   private saveBlob(blob: Blob | null, fileName: string): void {
     if (!blob) {
       this.message.error('备份文件为空');
@@ -364,5 +351,60 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
     anchor.download = fileName;
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  private watchBackupUpdates(): void {
+    this.ws
+      .on<DatabaseBackup>('backup.updated')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((backup) => this.applyBackupUpdate(backup));
+  }
+
+  private applyBackupUpdate(backup: DatabaseBackup): void {
+    if (!backup?.guid) return;
+    if (this.selectedBackup?.guid === backup.guid) {
+      this.selectedBackup = { ...this.selectedBackup, ...backup };
+    }
+
+    if (!this.matchesCurrentQuery(backup)) {
+      const previousLength = this.data.length;
+      this.data = this.data.filter((item) => item.guid !== backup.guid);
+      if (this.data.length !== previousLength) {
+        this.total = Math.max(0, this.total - 1);
+      }
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const index = this.data.findIndex((item) => item.guid === backup.guid);
+    if (index >= 0) {
+      this.data = this.data.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...backup } : item,
+      );
+    } else if (this.q.page === 1) {
+      this.data = [backup, ...this.data].slice(0, this.q.size);
+      this.total += 1;
+    }
+    this.cdr.markForCheck();
+  }
+
+  private matchesCurrentQuery(item: DatabaseBackup): boolean {
+    if (this.q.dataSourceGuid && item.dataSourceGuid !== this.q.dataSourceGuid) return false;
+    if (this.q.status && item.status !== this.q.status) return false;
+    const keyword = this.q.keyword.trim().toLowerCase();
+    if (!keyword) return true;
+    return [
+      item.guid,
+      item.dataSourceName,
+      item.database,
+      item.tables,
+      item.remark,
+      item.lastError,
+      item.fileName,
+    ].some((value) =>
+      String(value || '')
+        .toLowerCase()
+        .includes(keyword),
+    );
   }
 }

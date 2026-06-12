@@ -1,0 +1,220 @@
+<section class="database-detail-page">
+  <div class="page-heading">
+    <title-label
+      title="数据库详情"
+      [showBack]="true"
+      [description]="
+        source
+          ? source.name +
+            ' · ' +
+            sourceTypeLabel(source.type) +
+            ' · ' +
+            source.host +
+            ':' +
+            source.port
+          : '查看数据源的基础、连接、存储、表统计和性能指标。'
+      "
+    />
+    <div class="page-actions">
+      <button nz-button nzType="primary" [nzLoading]="loading" (click)="loadDetail()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <nz-spin [nzSpinning]="loading">
+    @if (detail; as current) {
+      <div class="overview-band">
+        <div class="database-title">
+          <span class="database-icon">
+            <i nz-icon nzType="database"></i>
+          </span>
+          <div>
+            <h2>{{ current.basic.name || current.connection.database || '-' }}</h2>
+            <p>
+              {{
+                current.connection.endpoint ||
+                  current.connection.host + ':' + current.connection.port
+              }}
+              <span>最近检查 {{ formatTime(current.checkedAt) }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="overview-tags">
+          <span class="type-chip">{{ sourceTypeLabel(current.basic.type) }}</span>
+          <span class="status-chip">
+            <i nz-icon nzType="check-circle"></i>
+            连接健康
+          </span>
+        </div>
+      </div>
+
+      @if (safeWarnings(current).length > 0) {
+        <nz-alert
+          nzType="warning"
+          nzShowIcon
+          [nzMessage]="'部分指标读取受限'"
+          [nzDescription]="warningTpl"
+        />
+        <ng-template #warningTpl>
+          <div class="warning-list">
+            @for (warning of safeWarnings(current); track warning) {
+              <span>{{ warning }}</span>
+            }
+          </div>
+        </ng-template>
+      }
+
+      <div class="summary-grid">
+        @for (metric of summaryMetrics(current); track metric.label) {
+          <div class="summary-card" [class]="'summary-' + metric.tone">
+            <span class="summary-icon"><i nz-icon [nzType]="metric.icon"></i></span>
+            <div>
+              <span>{{ metric.label }}</span>
+              <strong>{{ metric.value }}</strong>
+              <em>{{ metric.hint }}</em>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="detail-grid">
+        <section class="detail-panel">
+          <div class="panel-title">
+            <span><i nz-icon nzType="database"></i> 基础信息</span>
+          </div>
+          <div class="info-grid">
+            @for (item of basicItems(current); track item.label) {
+              <div class="info-item">
+                <span>{{ item.label }}</span>
+                <strong [class.mono]="item.mono">{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+          <div class="metric-list">
+            @for (metric of safeMetrics(current.basic.metrics); track metric.label) {
+              <div class="metric-row">
+                <span>{{ metric.label }}</span>
+                <strong>{{ formatMetric(metric) }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="detail-panel">
+          <div class="panel-title">
+            <span><i nz-icon nzType="link"></i> 连接信息</span>
+          </div>
+          <div class="info-grid">
+            @for (item of connectionItems(current); track item.label) {
+              <div class="info-item">
+                <span>{{ item.label }}</span>
+                <strong [class.mono]="item.mono">{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+          <div class="metric-list">
+            @for (metric of safeMetrics(current.connection.metrics); track metric.label) {
+              <div class="metric-row">
+                <span>{{ metric.label }}</span>
+                <strong>{{ formatMetric(metric) }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="detail-panel">
+          <div class="panel-title">
+            <span><i nz-icon nzType="hdd"></i> 存储信息</span>
+          </div>
+          <div class="info-grid">
+            @for (item of storageItems(current); track item.label) {
+              <div class="info-item">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+          <div class="metric-list">
+            @for (metric of safeMetrics(current.storage.metrics); track metric.label) {
+              <div class="metric-row">
+                <span>{{ metric.label }}</span>
+                <strong>{{
+                  metric.unit === 'B' ? formatBytes(+metric.value) : formatMetric(metric)
+                }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="detail-panel">
+          <div class="panel-title">
+            <span><i nz-icon nzType="line-chart"></i> 性能监控</span>
+          </div>
+          <div class="info-grid">
+            @for (item of performanceItems(current); track item.label) {
+              <div class="info-item">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+          <div class="metric-list">
+            @for (metric of safeMetrics(current.performance.metrics); track metric.label) {
+              <div class="metric-row">
+                <span>{{ metric.label }}</span>
+                <strong>{{ formatMetric(metric) }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <section class="table-panel">
+        <div class="panel-title table-title">
+          <span><i nz-icon nzType="table"></i> 表统计信息</span>
+          <em>{{ tableStatsSummary(current) }}</em>
+        </div>
+        <st
+          [data]="safeTables(current)"
+          [columns]="tableColumns"
+          [page]="{ front: true, showSize: true, pageSizes: [10, 20, 50] }"
+        >
+          <ng-template st-row="tableNameRender" let-item>
+            <div class="strong truncate-text">{{ item.name }}</div>
+            @if (item.comment) {
+              <div class="muted truncate-text">{{ item.comment }}</div>
+            }
+          </ng-template>
+          <ng-template st-row="tableTypeRender" let-item>
+            <span class="type-chip">{{ tableTypeLabel(item.type) }}</span>
+          </ng-template>
+          <ng-template st-row="tableRowsRender" let-item>
+            {{ formatNumber(item.rows) }}
+          </ng-template>
+          <ng-template st-row="tableDataRender" let-item>
+            {{ formatTableBytes(current, item, 'dataBytes') }}
+          </ng-template>
+          <ng-template st-row="tableIndexRender" let-item>
+            {{ formatTableBytes(current, item, 'indexBytes') }}
+          </ng-template>
+          <ng-template st-row="tableCreatedRender" let-item>
+            <span class="mono">{{ item.createdAt || '-' }}</span>
+          </ng-template>
+          <ng-template st-row="tableUpdatedRender" let-item>
+            <span class="mono">{{ item.updatedAt || '-' }}</span>
+          </ng-template>
+        </st>
+      </section>
+    } @else {
+      <div class="empty-state">
+        <i nz-icon nzType="database"></i>
+        <strong>{{ loadError || '正在读取数据库详情' }}</strong>
+        @if (loadError) {
+          <button nz-button nzType="primary" (click)="loadDetail()">重新读取</button>
+        }
+      </div>
+    }
+  </nz-spin>
+</section>

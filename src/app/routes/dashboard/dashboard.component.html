@@ -1,76 +1,255 @@
 <section class="dashboard-page">
-  <title-label title="工作台" description="总览数据源、同步任务、执行历史与失败风险。" />
-
-  <div class="dashboard-panels">
-    <app-panel
-      icon="database"
-      title="数据源"
-      [value]="dataSourceValue"
-      trend="连接配置"
-      trendType="neutral"
+  <div class="page-heading">
+    <title-label
+      title="工作台"
+      description="总览数据源、同步任务、模板、备份恢复与服务运行状态。"
     />
-    <app-panel
-      icon="sync"
-      title="同步任务"
-      [value]="taskValue"
-      trend="可执行"
-      trendType="neutral"
-    />
-    <app-panel
-      icon="history"
-      title="执行记录"
-      [value]="runValue"
-      trend="历史"
-      trendType="neutral"
-    />
-    <app-panel
-      icon="alert"
-      title="失败运行"
-      [value]="failedValue"
-      trend="待处理"
-      [trendType]="failedRunTotal > 0 ? 'down' : 'neutral'"
-    />
+    <div class="page-actions">
+      <span class="refresh-chip">更新 {{ formatTime(lastUpdated) }}</span>
+      <button nz-button nzType="primary" [nzLoading]="loading" (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
   </div>
 
-  <div class="dashboard-widgets">
-    <nz-card class="dashboard-card" [nzBordered]="false">
-      <div class="card-heading">
-        <h2>最近执行</h2>
-        <a nz-button nzType="link" routerLink="/sync/runs/list">查看全部</a>
-      </div>
-      <div class="run-list">
-        @for (item of recentRuns; track item.guid) {
-          <a class="run-row" [routerLink]="['/sync/runs', item.guid]">
-            <div>
-              <strong>{{ item.taskName || '-' }}</strong>
-              <span>{{ formatTime(item.startTime) }}</span>
-            </div>
-            <div class="run-progress">
-              <nz-progress [nzPercent]="percent(item)" [nzShowInfo]="false" />
-              <span>{{ statusLabel(item.status) }}</span>
-            </div>
-          </a>
-        } @empty {
-          <div class="empty-state">暂无执行记录，先创建同步任务并手动执行。</div>
-        }
-      </div>
-    </nz-card>
+  <div class="dashboard-panels">
+    <a class="panel-link" routerLink="/datasources/health">
+      <app-panel
+        icon="database"
+        title="数据源"
+        [value]="dataSourceValue"
+        [trend]="
+          unhealthySourceTotal > 0 ? unhealthySourceTotal + ' 异常' : healthySourceTotal + ' 健康'
+        "
+        [trendType]="unhealthySourceTotal > 0 ? 'down' : 'neutral'"
+      />
+    </a>
+    <a class="panel-link" routerLink="/sync/tasks/list">
+      <app-panel
+        icon="sync"
+        title="同步任务"
+        [value]="taskValue"
+        [trend]="enabledTaskTotal + ' 启用'"
+        trendType="neutral"
+      />
+    </a>
+    <a class="panel-link" routerLink="/sync/templates">
+      <app-panel
+        icon="profile"
+        title="同步模板"
+        [value]="templateValue"
+        [trend]="enabledTemplateTotal + ' 可用'"
+        trendType="neutral"
+      />
+    </a>
+    <a class="panel-link" routerLink="/ops/monitor">
+      <app-panel
+        icon="alert"
+        title="待处理风险"
+        [value]="pendingIssueValue"
+        trend="失败记录"
+        [trendType]="pendingIssueTotal > 0 ? 'down' : 'neutral'"
+      />
+    </a>
+  </div>
 
-    <nz-card class="dashboard-card" [nzBordered]="false">
-      <div class="card-heading">
-        <h2>运行检查</h2>
-      </div>
-      <div class="rule-list">
-        @for (item of rules; track item.name) {
-          <div class="rule-row" [class.rule-warning]="item.tone === 'warning'">
-            <div>
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.flow }}</span>
-            </div>
-            <em>{{ item.status }}</em>
+  <div class="quick-grid">
+    @for (item of quickActions; track item.title) {
+      <a class="quick-action" [routerLink]="item.link">
+        <span><i nz-icon [nzType]="item.icon"></i></span>
+        <strong>{{ item.title }}</strong>
+        <em>{{ item.desc }}</em>
+      </a>
+    }
+  </div>
+
+  <div class="dashboard-layout">
+    <div class="main-stack">
+      <nz-card class="dashboard-card" [nzBordered]="false">
+        <div class="card-heading">
+          <div>
+            <h2>最近执行</h2>
+            <span>同步任务执行历史与处理进度。</span>
           </div>
+          <a nz-button nzType="link" routerLink="/sync/runs/list">查看全部</a>
+        </div>
+        <div class="run-list">
+          @for (item of recentRuns; track item.guid) {
+            <a class="run-row" [routerLink]="['/sync/runs', item.guid]">
+              <div class="row-main">
+                <strong>{{ item.taskName || '-' }}</strong>
+                <span
+                  >{{ formatTime(item.startTime) }} · {{ rowCount(item.processedCount) }} /
+                  {{ rowCount(item.totalCount) }} 行</span
+                >
+              </div>
+              <div class="run-progress">
+                <nz-progress
+                  [nzPercent]="percent(item)"
+                  [nzStatus]="progressStatus(item.status)"
+                  [nzShowInfo]="false"
+                />
+                <span>{{ statusLabel(item.status) }} {{ percent(item) }}%</span>
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-state">暂无执行记录，先创建同步任务并手动执行。</div>
+          }
+        </div>
+      </nz-card>
+
+      <nz-card class="dashboard-card" [nzBordered]="false">
+        <div class="card-heading">
+          <div>
+            <h2>备份与恢复</h2>
+            <span>备份历史、恢复任务和失败风险。</span>
+          </div>
+          <a nz-button nzType="link" routerLink="/backups/restore">备份恢复</a>
+        </div>
+        <div class="backup-summary">
+          <a routerLink="/backups/history">
+            <span>备份记录</span>
+            <strong>{{ backupTotal }}</strong>
+            <em>{{ runningBackupTotal }} 运行中 · {{ failedBackupTotal }} 失败</em>
+          </a>
+          <a routerLink="/backups/restore">
+            <span>恢复记录</span>
+            <strong>{{ restoreTotal }}</strong>
+            <em>{{ runningRestoreTotal }} 运行中 · {{ failedRestoreTotal }} 失败</em>
+          </a>
+        </div>
+        <div class="timeline-list">
+          @for (item of backupTimeline(); track item.kind + item.guid) {
+            <a class="timeline-row" [routerLink]="item.link">
+              <span class="kind" [class.kind-restore]="item.kind === 'restore'">
+                {{ item.kind === 'backup' ? '备份' : '恢复' }}
+              </span>
+              <div class="row-main">
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.subTitle }} · {{ formatTime(item.time) }}</span>
+              </div>
+              <div class="timeline-progress">
+                <nz-progress [nzPercent]="item.percent" [nzShowInfo]="false" />
+                <span>{{ item.status }}</span>
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-state compact">暂无备份或恢复记录。</div>
+          }
+        </div>
+      </nz-card>
+
+      <nz-card class="dashboard-card check-card" [nzBordered]="false">
+        <div class="card-heading">
+          <div>
+            <h2>运行检查</h2>
+            <span>关键模块的当前状态和处理入口。</span>
+          </div>
+        </div>
+        <div class="rule-list">
+          @for (item of checks; track item.name) {
+            <a
+              class="rule-row"
+              [class.rule-success]="item.tone === 'success'"
+              [class.rule-warning]="item.tone === 'warning'"
+              [class.rule-danger]="item.tone === 'danger'"
+              [class.rule-idle]="item.tone === 'idle'"
+              [routerLink]="item.link"
+            >
+              <div>
+                <strong>{{ item.name }}</strong>
+                <span>{{ item.flow }}</span>
+              </div>
+              <em>{{ item.status }}</em>
+            </a>
+          }
+        </div>
+      </nz-card>
+    </div>
+
+    <div class="side-stack">
+      <nz-card
+        class="dashboard-card service-card"
+        [class.service-success]="serviceHealthTone() === 'success'"
+        [class.service-warning]="serviceHealthTone() === 'warning'"
+        [class.service-danger]="serviceHealthTone() === 'danger'"
+        [class.service-idle]="serviceHealthTone() === 'idle'"
+        [nzBordered]="false"
+      >
+        <div class="card-heading">
+          <div>
+            <h2>系统运行</h2>
+            <span>后端服务与部署服务器性能。</span>
+          </div>
+          <a nz-button nzType="link" routerLink="/ops/monitor">监控</a>
+        </div>
+
+        @if (systemMonitor; as monitor) {
+          <div class="service-head">
+            <span
+              class="status-chip"
+              [class.status-success]="serviceHealthTone() === 'success'"
+              [class.status-warning]="serviceHealthTone() === 'warning'"
+              [class.status-danger]="serviceHealthTone() === 'danger'"
+              [class.status-idle]="serviceHealthTone() === 'idle'"
+            >
+              {{ monitor.service.status === 'running' ? '运行中' : '未知' }}
+            </span>
+            <strong>{{ durationSeconds(monitor.service.uptimeSeconds) }}</strong>
+            <em>{{ monitor.service.name || 'DataSync' }} · PID {{ monitor.service.pid || '-' }}</em>
+          </div>
+
+          <div class="resource-list">
+            <div>
+              <span>CPU</span>
+              <strong>{{ cpuPercent() }}%</strong>
+              <nz-progress
+                [nzPercent]="cpuPercent()"
+                [nzStatus]="percentTone(cpuPercent())"
+                [nzShowInfo]="false"
+              />
+            </div>
+            <div>
+              <span>内存</span>
+              <strong>{{ memoryPercent() }}%</strong>
+              <nz-progress
+                [nzPercent]="memoryPercent()"
+                [nzStatus]="percentTone(memoryPercent())"
+                [nzShowInfo]="false"
+              />
+              <em>{{ formatMb(monitor.ram.usedMb) }} / {{ formatMb(monitor.ram.totalMb) }}</em>
+            </div>
+            @if (firstDisk(); as disk) {
+              <div>
+                <span>磁盘 {{ disk.mountPoint }}</span>
+                <strong>{{ diskPercent(disk) }}%</strong>
+                <nz-progress
+                  [nzPercent]="diskPercent(disk)"
+                  [nzStatus]="percentTone(diskPercent(disk))"
+                  [nzShowInfo]="false"
+                />
+                <em>{{ formatMb(disk.usedMb) }} / {{ formatMb(disk.totalMb) }}</em>
+              </div>
+            }
+          </div>
+
+          <div class="runtime-meta">
+            <span>{{ monitor.service.goVersion }} · {{ monitor.service.goos }}</span>
+            <span>进程内存 {{ formatBytes(monitor.service.allocBytes) }}</span>
+            <span>采样 {{ formatTime(monitor.checkedAt) }}</span>
+          </div>
+
+          @if (monitor.warnings.length > 0) {
+            <div class="warning-note">
+              <i nz-icon nzType="warning"></i>
+              <span>{{ monitor.warnings.join('；') }}</span>
+            </div>
+          }
+        } @else {
+          <div class="empty-state compact">暂未读取到系统运行信息。</div>
         }
-      </div>
-    </nz-card>
+      </nz-card>
+    </div>
   </div>
 </section>

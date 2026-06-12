@@ -1,6 +1,10 @@
 <section class="datasource-edit-page">
   <div class="page-heading">
-    <title-label [showBack]="true" title="编辑数据源" description="调整数据库连接配置，保存后同步任务会使用新的连接信息。" />
+    <title-label
+      [showBack]="true"
+      title="编辑数据源"
+      description="调整数据库连接配置，保存后同步任务会使用新的连接信息。"
+    />
   </div>
 
   <div class="edit-layout">
@@ -95,8 +99,14 @@
         <h3>保存影响</h3>
         <ul class="context-list">
           <li><i nz-icon nzType="check-circle"></i><span>密码留空时不会覆盖原密码。</span></li>
-          <li><i nz-icon nzType="check-circle"></i><span>主机、端口或数据库变化后建议重新测试连接。</span></li>
-          <li><i nz-icon nzType="check-circle"></i><span>禁用后，依赖该数据源的任务不应继续执行。</span></li>
+          <li>
+            <i nz-icon nzType="check-circle"></i
+            ><span>主机、端口或数据库变化后建议重新测试连接。</span>
+          </li>
+          <li>
+            <i nz-icon nzType="check-circle"></i
+            ><span>禁用后，依赖该数据源的任务不应继续执行。</span>
+          </li>
         </ul>
       </section>
 

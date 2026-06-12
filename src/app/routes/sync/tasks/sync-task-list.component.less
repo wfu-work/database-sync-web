@@ -35,14 +35,8 @@
 }
 
 .sync-task-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(440px, 520px);
-  gap: 18px;
-  align-items: start;
-}
-
-.sync-task-layout-single {
-  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  width: 100%;
 }
 
 .list-card,
@@ -52,12 +46,7 @@
   border-radius: 8px;
 }
 
-.sync-task-layout-single .form-card {
-  justify-self: start;
-  width: min(960px, 100%);
-}
-
-.sync-task-layout-single .list-card {
+.list-card {
   width: 100%;
 }
 
@@ -135,6 +124,21 @@
 
 .filter-actions button {
   min-width: 86px;
+}
+
+.task-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.task-table-wrap st {
+  display: block;
+  min-width: 0;
+}
+
+:host ::ng-deep .task-table-wrap .ant-table {
+  min-width: 980px;
 }
 
 .form-title {

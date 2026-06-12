@@ -3,8 +3,10 @@ export type SyncMode = 'full' | 'incremental';
 export type WriteMode = 'insert' | 'upsert' | 'replace';
 export type RunStatus = 'pending' | 'running' | 'success' | 'failed' | 'canceled';
 export type BackupStatus = 'pending' | 'running' | 'success' | 'failed';
+export type RestoreStatus = 'pending' | 'running' | 'success' | 'failed';
 export type DataSourceConnectionStatus = 'unknown' | 'checking' | 'connected' | 'failed';
 export type EventNotificationLevel = 'info' | 'warning' | 'error';
+export type WebSocketEventType = 'backup.updated' | 'datasource.updated' | 'notification.created';
 export type MapperRow = Record<string, unknown>;
 
 export interface BaseEntity {
@@ -40,6 +42,7 @@ export interface ColumnInfo {
   databaseType: string;
   nullable: boolean;
   primaryKey: boolean;
+  isTag: boolean;
   comment: string;
 }
 
@@ -52,6 +55,144 @@ export interface PreviewTableRequest {
 export interface TablePreviewResult {
   rows: MapperRow[];
   count: number;
+}
+
+export interface MetricItem {
+  label: string;
+  value: string;
+  unit: string;
+  hint: string;
+}
+
+export interface DatabaseBasicInfo {
+  name: string;
+  type: DataSourceType | string;
+  version: string;
+  charset: string;
+  collation: string;
+  serverTime: string;
+  uptimeSeconds: number;
+  metrics: MetricItem[];
+}
+
+export interface DatabaseConnectionInfo {
+  host: string;
+  port: number;
+  username: string;
+  database: string;
+  endpoint: string;
+  currentUser: string;
+  connectionId: string;
+  maxConnections: number;
+  threadsRunning: number;
+  threadsConnected: number;
+  metrics: MetricItem[];
+}
+
+export interface DatabaseStorageInfo {
+  totalBytes: number;
+  dataBytes: number;
+  indexBytes: number;
+  freeBytes: number;
+  metrics: MetricItem[];
+}
+
+export interface TableStat {
+  name: string;
+  type: string;
+  rows: number;
+  dataBytes: number;
+  indexBytes: number;
+  createdAt: string;
+  updatedAt: string;
+  comment: string;
+}
+
+export interface DatabaseTableStats {
+  totalTables: number;
+  totalViews: number;
+  totalRows: number;
+  tables: TableStat[];
+}
+
+export interface DatabasePerformanceInfo {
+  qps: number;
+  slowQueries: number;
+  queries: number;
+  connections: number;
+  openTables: number;
+  cacheHitPercent: number;
+  metrics: MetricItem[];
+}
+
+export interface DatabaseDetail {
+  basic: DatabaseBasicInfo;
+  connection: DatabaseConnectionInfo;
+  storage: DatabaseStorageInfo;
+  tableStats: DatabaseTableStats;
+  performance: DatabasePerformanceInfo;
+  warnings: string[] | null;
+  checkedAt: number;
+}
+
+export interface ServiceRuntimeInfo {
+  name: string;
+  status: string;
+  pid: number;
+  startedAt: number;
+  uptimeSeconds: number;
+  workingDir: string;
+  executable: string;
+  goVersion: string;
+  goos: string;
+  compiler: string;
+  numCpu: number;
+  numGoroutine: number;
+  allocBytes: number;
+  sysBytes: number;
+  heapAllocBytes: number;
+  heapInuseBytes: number;
+  lastGcPauseNano: number;
+}
+
+export interface ServerOSInfo {
+  goos: string;
+  numCpu: number;
+  compiler: string;
+  goVersion: string;
+  numGoroutine: number;
+}
+
+export interface ServerCPUInfo {
+  cpus: number[];
+  cores: number;
+}
+
+export interface ServerRAMInfo {
+  usedMb: number;
+  usedGb: number;
+  totalMb: number;
+  totalGb: number;
+  usedPercent: number;
+}
+
+export interface ServerDiskInfo {
+  mountPoint: string;
+  usedMb: number;
+  usedGb: number;
+  totalMb: number;
+  totalGb: number;
+  usedPercent: number;
+}
+
+export interface SystemMonitorInfo {
+  service: ServiceRuntimeInfo;
+  os: ServerOSInfo;
+  cpu: ServerCPUInfo;
+  ram: ServerRAMInfo;
+  disk: ServerDiskInfo[];
+  warnings: string[];
+  checkedAt: number;
 }
 
 export interface SaveDataSourcePayload {
@@ -75,6 +216,13 @@ export interface FieldMapping {
   transform?: string;
 }
 
+export interface TagMapping {
+  name: string;
+  source?: string;
+  default?: unknown;
+  transform?: string;
+}
+
 export interface SyncTask extends BaseEntity {
   name: string;
   sourceGuid: string;
@@ -89,10 +237,43 @@ export interface SyncTask extends BaseEntity {
   writeMode: WriteMode | string;
   conflictKeys: string;
   whereClause: string;
+  syncTimeField: string;
+  syncStartDate: string;
+  syncEndDate: string;
+  tdengineChildTableTemplate: string;
+  tdengineChildTableField: string;
+  tdengineTags: string;
   cronExpr: string;
   scheduleOn: number;
   lastRunGuid: string;
   lastRunStatus: RunStatus | string;
+  remark: string;
+  status: number;
+}
+
+export interface SyncTemplate extends BaseEntity {
+  name: string;
+  description: string;
+  sourceGuid: string;
+  targetGuid: string;
+  sourceTable: string;
+  targetTable: string;
+  mode: SyncMode | string;
+  cursorField: string;
+  cursorValue: string;
+  batchSize: number;
+  fieldMapping: string;
+  writeMode: WriteMode | string;
+  conflictKeys: string;
+  whereClause: string;
+  syncTimeField: string;
+  syncStartDate: string;
+  syncEndDate: string;
+  tdengineChildTableTemplate: string;
+  tdengineChildTableField: string;
+  tdengineTags: string;
+  cronExpr: string;
+  scheduleOn: number;
   remark: string;
   status: number;
 }
@@ -112,10 +293,27 @@ export interface SaveSyncTaskPayload {
   writeMode: WriteMode;
   conflictKeys?: string;
   whereClause?: string;
+  syncTimeField?: string;
+  syncStartDate?: string;
+  syncEndDate?: string;
+  tdengineChildTableTemplate?: string;
+  tdengineChildTableField?: string;
+  tdengineTags?: string;
+  tdengineTagMappings?: TagMapping[];
   cronExpr?: string;
   scheduleOn?: number;
   remark?: string;
   status?: number;
+}
+
+export interface SaveSyncTemplatePayload extends SaveSyncTaskPayload {
+  description?: string;
+}
+
+export interface SaveSyncTemplateFromTaskPayload {
+  name?: string;
+  description?: string;
+  remark?: string;
 }
 
 export interface ValidateSyncTaskResult {
@@ -228,6 +426,52 @@ export interface StartDatabaseBackupPayload {
   remark?: string;
 }
 
+export interface DatabaseRestore extends BaseEntity {
+  backupGuid: string;
+  backupName: string;
+  sourceDataSourceGuid: string;
+  sourceDataSourceName: string;
+  targetDataSourceGuid: string;
+  targetDataSourceName: string;
+  targetDataSourceType: DataSourceType | string;
+  targetDatabase: string;
+  tables: string;
+  batchSize: number;
+  writeMode: WriteMode | string;
+  createTable: boolean;
+  truncateBeforeRestore: boolean;
+  retryTimes: number;
+  retryIntervalMs: number;
+  status: RestoreStatus | string;
+  totalTables: number;
+  finishedTables: number;
+  currentTable: string;
+  currentRows: number;
+  currentTotal: number;
+  currentBatch: number;
+  totalRows: number;
+  successRows: number;
+  failedRows: number;
+  startTime: number;
+  endTime: number;
+  durationMs: number;
+  lastError: string;
+  remark: string;
+}
+
+export interface StartDatabaseRestorePayload {
+  backupGuid?: string;
+  targetDataSourceGuid?: string;
+  tables?: string[];
+  batchSize?: number;
+  writeMode?: WriteMode;
+  createTable?: boolean;
+  truncateBeforeRestore?: boolean;
+  retryTimes?: number;
+  retryIntervalMs?: number;
+  remark?: string;
+}
+
 export interface EventNotification extends BaseEntity {
   type: string;
   level: EventNotificationLevel | string;
@@ -238,4 +482,10 @@ export interface EventNotification extends BaseEntity {
   sourceName: string;
   read: number;
   eventTime: number;
+}
+
+export interface WebSocketMessage<T = unknown> {
+  type: WebSocketEventType | string;
+  data?: T;
+  time: number;
 }

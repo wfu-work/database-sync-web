@@ -1,0 +1,279 @@
+<section class="restore-page">
+  <div class="page-heading">
+    <title-label
+      title="备份恢复"
+      description="从已完成的备份包中选择表数据，恢复到原数据源或指定目标数据源。"
+    />
+    <div class="page-actions">
+      <button nz-button (click)="getRestores()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+      <button nz-button routerLink="/backups/history">
+        <i nz-icon nzType="history"></i>
+        备份历史
+      </button>
+      <button nz-button nzType="primary" (click)="openCreate()">
+        <i nz-icon nzType="plus"></i>
+        新建恢复
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="restore-card restore-list-card" [nzBordered]="false">
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>恢复历史</strong>
+          <span>查看恢复状态、目标数据源和写入进度。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索恢复 GUID、备份、数据源或备注"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+          <nz-option nzValue="" nzLabel="全部状态" />
+          <nz-option nzValue="pending" nzLabel="等待" />
+          <nz-option nzValue="running" nzLabel="恢复中" />
+          <nz-option nzValue="success" nzLabel="成功" />
+          <nz-option nzValue="failed" nzLabel="失败" />
+        </nz-select>
+        <button nz-button nzType="primary" (click)="search()">
+          <i nz-icon nzType="search"></i>
+          搜索
+        </button>
+        <button nz-button (click)="resetQuery()">重置</button>
+      </div>
+    </div>
+
+    <st
+      [data]="restores"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="restoreRender" let-item>
+        <div class="record-cell">
+          <ellipsis class="strong block-ellipsis" [tooltip]="true" [length]="32">
+            {{ item.backupName || item.backupGuid }}
+          </ellipsis>
+          <ellipsis class="muted mono block-ellipsis" [tooltip]="true" [length]="36">
+            {{ item.guid }}
+          </ellipsis>
+        </div>
+      </ng-template>
+
+      <ng-template st-row="targetRender" let-item>
+        <div>{{ item.targetDataSourceName || '-' }}</div>
+        <div class="muted">
+          {{ item.targetDataSourceType || '-' }}
+          @if (item.targetDatabase) {
+            · {{ item.targetDatabase }}
+          }
+        </div>
+      </ng-template>
+
+      <ng-template st-row="statusRender" let-item>
+        <span class="status" [class]="statusClass(item.status)">
+          {{ statusLabel(item.status) }}
+        </span>
+        @if (item.status === 'running' || item.finishedTables || item.currentTable) {
+          <div class="restore-progress">
+            <nz-progress
+              [nzPercent]="restorePercent(item)"
+              [nzStatus]="progressStatus(item)"
+              [nzShowInfo]="false"
+            />
+            <div class="muted">
+              {{ item.finishedTables || 0 }} / {{ item.totalTables || 0 }} 张表
+            </div>
+            @if (item.currentTable) {
+              <div class="table-progress">
+                <div class="muted ellipsis">当前：{{ item.currentTable }}</div>
+                <div class="muted">
+                  已写 {{ rowCount(item.currentRows) }}
+                  @if (item.currentTotal) {
+                    / {{ rowCount(item.currentTotal) }}
+                  }
+                  行 · 第 {{ item.currentBatch || 0 }} 批
+                </div>
+                @if (item.currentTotal) {
+                  <nz-progress
+                    [nzPercent]="currentTablePercent(item)"
+                    nzSize="small"
+                    nzStatus="active"
+                    [nzShowInfo]="false"
+                  />
+                }
+              </div>
+            }
+          </div>
+        }
+        @if (item.lastError) {
+          <div class="muted error-text">{{ item.lastError }}</div>
+        }
+      </ng-template>
+
+      <ng-template st-row="scopeRender" let-item>
+        <div>{{ item.totalTables || 0 }} 张表</div>
+        <div class="muted">{{ rowCount(item.successRows || item.totalRows) }} 行</div>
+      </ng-template>
+
+      <ng-template st-row="policyRender" let-item>
+        <div>{{ writeModeLabel(item.writeMode) }}</div>
+        <div class="muted">{{ item.createTable ? '自动建表' : '不建表' }}</div>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        <div>{{ formatTime(item.startTime || item.createTime) }}</div>
+        <div class="muted">耗时 {{ duration(item.durationMs) }}</div>
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <button nz-button nzType="link" (click)="openDetail(item)">
+          <i nz-icon nzType="eye"></i>
+          详情
+        </button>
+      </ng-template>
+    </st>
+  </nz-card>
+
+  <nz-drawer
+    [nzVisible]="detailVisible"
+    [nzWidth]="760"
+    nzTitle="恢复详情"
+    (nzOnClose)="closeDetail()"
+  >
+    <ng-container *nzDrawerContent>
+      <nz-spin [nzSpinning]="detailLoading">
+        @if (selectedRestore) {
+          <div class="detail-head">
+            <div>
+              <div class="strong">
+                {{ selectedRestore.backupName || selectedRestore.backupGuid }}
+              </div>
+              <div class="muted mono">{{ selectedRestore.guid }}</div>
+            </div>
+            <span class="status" [class]="statusClass(selectedRestore.status)">
+              {{ statusLabel(selectedRestore.status) }}
+            </span>
+          </div>
+
+          @if (selectedRestore.lastError) {
+            <section class="failure-panel">
+              <div class="failure-title">
+                <i nz-icon nzType="warning"></i>
+                <span>失败原因</span>
+              </div>
+              <div class="failure-raw mono">{{ selectedRestore.lastError }}</div>
+            </section>
+          }
+
+          <div class="detail-grid">
+            <div>
+              <span>原数据源</span>
+              <strong>{{ selectedRestore.sourceDataSourceName || '-' }}</strong>
+            </div>
+            <div>
+              <span>目标数据源</span>
+              <strong>{{ selectedRestore.targetDataSourceName || '-' }}</strong>
+            </div>
+            <div>
+              <span>目标库</span>
+              <strong>{{ selectedRestore.targetDatabase || '-' }}</strong>
+            </div>
+            <div>
+              <span>写入模式</span>
+              <strong>{{ writeModeLabel(selectedRestore.writeMode) }}</strong>
+            </div>
+            <div>
+              <span>自动建表</span>
+              <strong>{{ selectedRestore.createTable ? '是' : '否' }}</strong>
+            </div>
+            <div>
+              <span>恢复前清空</span>
+              <strong>{{ selectedRestore.truncateBeforeRestore ? '是' : '否' }}</strong>
+            </div>
+            <div>
+              <span>总表数</span>
+              <strong>{{ selectedRestore.totalTables || 0 }}</strong>
+            </div>
+            <div>
+              <span>已完成表</span>
+              <strong>
+                {{ selectedRestore.finishedTables || 0 }} / {{ selectedRestore.totalTables || 0 }}
+              </strong>
+            </div>
+            <div>
+              <span>当前表</span>
+              <strong>{{ selectedRestore.currentTable || '-' }}</strong>
+            </div>
+            <div>
+              <span>总行数</span>
+              <strong>{{ rowCount(selectedRestore.totalRows) }}</strong>
+            </div>
+            <div>
+              <span>成功行数</span>
+              <strong>{{ rowCount(selectedRestore.successRows) }}</strong>
+            </div>
+            <div>
+              <span>失败行数</span>
+              <strong>{{ rowCount(selectedRestore.failedRows) }}</strong>
+            </div>
+            <div>
+              <span>开始时间</span>
+              <strong>{{
+                formatTime(selectedRestore.startTime || selectedRestore.createTime)
+              }}</strong>
+            </div>
+            <div>
+              <span>结束时间</span>
+              <strong>{{ formatTime(selectedRestore.endTime) }}</strong>
+            </div>
+            <div>
+              <span>耗时</span>
+              <strong>{{ duration(selectedRestore.durationMs) }}</strong>
+            </div>
+          </div>
+
+          <section class="detail-section">
+            <h3>恢复表</h3>
+            @if (parsedTables(selectedRestore.tables); as restoreTables) {
+              @if (restoreTables.length > 0) {
+                <div class="table-tags">
+                  @for (table of restoreTables; track table) {
+                    <code>{{ table }}</code>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">全部数据表</div>
+              }
+            }
+          </section>
+
+          @if (selectedRestore.remark) {
+            <section class="detail-section">
+              <h3>备注</h3>
+              <div class="text-box">{{ selectedRestore.remark }}</div>
+            </section>
+          }
+        } @else {
+          <div class="empty-state">正在读取恢复详情。</div>
+        }
+      </nz-spin>
+    </ng-container>
+  </nz-drawer>
+</section>

@@ -116,13 +116,21 @@
                 <span class="field-error">{{ paramsError }}</span>
               }
               <span class="field-help">
-                会与数据源连接参数合并后用于本次备份。TDengine 可设置 timeout；MySQL 可设置 timeout、readTimeout、writeTimeout 等 DSN 参数。
+                会与数据源连接参数合并后用于本次备份。TDengine 可设置 timeout；MySQL 可设置
+                timeout、readTimeout、writeTimeout 等 DSN 参数。
               </span>
             </sv>
 
             <sv label="失败重试次数" col="2">
-              <nz-input-number formControlName="retryTimes" [nzMin]="0" [nzMax]="10" [nzPrecision]="0" />
-              <span class="field-help">单批读取失败后自动重试，适合网络瞬断或 REST 连接偶发 EOF。</span>
+              <nz-input-number
+                formControlName="retryTimes"
+                [nzMin]="0"
+                [nzMax]="10"
+                [nzPrecision]="0"
+              />
+              <span class="field-help"
+                >单批读取失败后自动重试，适合网络瞬断或 REST 连接偶发 EOF。</span
+              >
             </sv>
 
             <sv label="重试间隔 ms" col="2">
@@ -134,7 +142,11 @@
               <div class="hint-card">
                 <strong>{{ selectedTypeLabel() }}</strong>
                 <span>
-                  {{ selectedTypeLabel() === 'TDengine' ? '大表建议 200-1000；先调大 timeout，再按压力调整批次。' : 'MySQL 建议保留 500-2000；慢表优先调 readTimeout/writeTimeout。' }}
+                  {{
+                    selectedTypeLabel() === 'TDengine'
+                      ? '大表建议 200-1000；先调大 timeout，再按压力调整批次。'
+                      : 'MySQL 建议保留 500-2000；慢表优先调 readTimeout/writeTimeout。'
+                  }}
                 </span>
               </div>
             </sv>
@@ -181,7 +193,8 @@
               <i nz-icon nzType="check-circle"></i><span>上线、迁移或批量修改数据前留存快照。</span>
             </li>
             <li>
-              <i nz-icon nzType="check-circle"></i><span>为问题排查、数据回滚或审计保留可追溯记录。</span>
+              <i nz-icon nzType="check-circle"></i
+              ><span>为问题排查、数据回滚或审计保留可追溯记录。</span>
             </li>
           </ul>
         </div>
@@ -189,10 +202,17 @@
         <div class="context-group">
           <h3>执行说明</h3>
           <ul class="context-list">
-            <li><i nz-icon nzType="clock-circle"></i><span>备份为异步任务，提交后可离开当前页面。</span></li>
-            <li><i nz-icon nzType="download"></i><span>成功后生成 zip 文件，可在备份历史中下载。</span></li>
             <li>
-              <i nz-icon nzType="warning"></i><span>连接失败或权限不足时，系统会记录失败原因。</span>
+              <i nz-icon nzType="clock-circle"></i
+              ><span>备份为异步任务，提交后可离开当前页面。</span>
+            </li>
+            <li>
+              <i nz-icon nzType="download"></i
+              ><span>成功后生成 zip 文件，可在备份历史中下载。</span>
+            </li>
+            <li>
+              <i nz-icon nzType="warning"></i
+              ><span>连接失败或权限不足时，系统会记录失败原因。</span>
             </li>
           </ul>
         </div>
@@ -200,10 +220,21 @@
         <div class="context-group">
           <h3>成功率建议</h3>
           <ul class="context-list">
-            <li><i nz-icon nzType="check-circle"></i><span>确认账号有读取表结构和数据的权限。</span></li>
-            <li><i nz-icon nzType="check-circle"></i><span>TDengine 大表优先设置 timeout，例如 5m。</span></li>
-            <li><i nz-icon nzType="check-circle"></i><span>MySQL 慢查询建议设置 readTimeout 和 writeTimeout。</span></li>
-            <li><i nz-icon nzType="check-circle"></i><span>遇到偶发 EOF 或连接重置，可保留 2-3 次批次重试。</span></li>
+            <li>
+              <i nz-icon nzType="check-circle"></i><span>确认账号有读取表结构和数据的权限。</span>
+            </li>
+            <li>
+              <i nz-icon nzType="check-circle"></i
+              ><span>TDengine 大表优先设置 timeout，例如 5m。</span>
+            </li>
+            <li>
+              <i nz-icon nzType="check-circle"></i
+              ><span>MySQL 慢查询建议设置 readTimeout 和 writeTimeout。</span>
+            </li>
+            <li>
+              <i nz-icon nzType="check-circle"></i
+              ><span>遇到偶发 EOF 或连接重置，可保留 2-3 次批次重试。</span>
+            </li>
           </ul>
         </div>
       </section>

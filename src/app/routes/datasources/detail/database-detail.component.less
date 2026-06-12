@@ -1,0 +1,394 @@
+:host {
+  display: block;
+}
+
+.database-detail-page {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  padding-bottom: 28px;
+}
+
+.page-heading,
+.page-actions,
+.database-title,
+.overview-tags,
+.overview-band,
+.panel-title,
+.metric-row,
+.table-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.page-heading,
+.overview-band,
+.panel-title,
+.table-title {
+  justify-content: space-between;
+}
+
+.page-actions {
+  flex-wrap: wrap;
+}
+
+.overview-band {
+  min-height: 132px;
+  padding: 28px;
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+nz-spin ::ng-deep {
+  .ant-spin-nested-loading,
+  .ant-spin-container {
+    min-width: 0;
+  }
+
+  .ant-spin-container {
+    display: grid;
+    gap: 22px;
+  }
+}
+
+.database-icon,
+.summary-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.database-icon {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+  color: #1f5fbf;
+  background: #eaf2ff;
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1f2a3d;
+  overflow-wrap: anywhere;
+}
+
+p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: #667085;
+}
+
+.status-chip,
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.overview-tags {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.status-chip {
+  gap: 6px;
+  color: #168a46;
+  background: #e8f8ef;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.summary-card {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  min-width: 0;
+  min-height: 118px;
+  padding: 20px 22px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.summary-card > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.summary-card span,
+.summary-card em {
+  color: #667085;
+}
+
+.summary-card span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.summary-card strong {
+  overflow: hidden;
+  font-size: 22px;
+  line-height: 1.1;
+  color: #1f2a3d;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-card em {
+  overflow: hidden;
+  font-size: 12px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-icon {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+
+.summary-blue .summary-icon {
+  color: #1f5fbf;
+  background: #eaf2ff;
+}
+
+.summary-green .summary-icon {
+  color: #168a46;
+  background: #e8f8ef;
+}
+
+.summary-orange .summary-icon {
+  color: #a15c00;
+  background: #fff1db;
+}
+
+.summary-teal .summary-icon {
+  color: #087e8b;
+  background: #e7f7f8;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.detail-panel,
+.table-panel {
+  min-width: 0;
+  padding: 24px 26px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.panel-title {
+  margin-bottom: 20px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2a3d;
+}
+
+.panel-title span {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.panel-title em {
+  overflow: hidden;
+  max-width: 60%;
+  font-size: 12px;
+  font-weight: 500;
+  font-style: normal;
+  color: #667085;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  min-width: 0;
+  min-height: 86px;
+  padding: 16px 18px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.info-item span,
+.metric-row span {
+  font-size: 12px;
+  color: #667085;
+}
+
+.info-item strong,
+.metric-row strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1f2a3d;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f7;
+}
+
+.metric-row {
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: #fbfcfe;
+}
+
+.warning-list {
+  display: grid;
+  gap: 4px;
+}
+
+.type-chip {
+  color: var(--nm-primary);
+  background: rgb(var(--nm-primary-rgb) / 10%);
+}
+
+.strong {
+  font-weight: 800;
+  color: #1f2a3d;
+}
+
+.muted {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b778c;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.truncate-text {
+  overflow: hidden;
+  display: block;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-panel {
+  overflow: hidden;
+}
+
+.table-panel ::ng-deep {
+  st,
+  .st,
+  .ant-table-wrapper,
+  .ant-table,
+  .ant-table-container {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .ant-table table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.empty-state {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  min-height: 280px;
+  padding: 48px 20px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  color: #667085;
+  text-align: center;
+  background: #fff;
+}
+
+.empty-state i {
+  font-size: 38px;
+  color: #98a2b3;
+}
+
+.empty-state strong {
+  color: #1f2a3d;
+}
+
+@media (max-width: 1180px) {
+  .summary-grid,
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .page-heading,
+  .overview-band,
+  .table-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-grid,
+  .detail-grid,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-title em {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .overview-tags {
+    justify-content: flex-start;
+  }
+}

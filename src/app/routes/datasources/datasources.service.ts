@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import {
   ColumnInfo,
   DataSource,
+  DatabaseDetail,
   PreviewTableRequest,
   SaveDataSourcePayload,
   TableInfo,
@@ -36,12 +37,16 @@ export class DataSourcesService {
     return this.http.delete<boolean>(`/datasources/${guid}`);
   }
 
-  test(guid: string): Observable<boolean> {
-    return this.http.post<boolean>(`/datasources/${guid}/test`, {});
+  test(guid: string): Observable<DataSource> {
+    return this.http.post<DataSource>(`/datasources/${guid}/test`, {});
   }
 
   tables(guid: string): Observable<TableInfo[]> {
     return this.http.get<TableInfo[]>(`/datasources/${guid}/tables`);
+  }
+
+  databaseDetail(guid: string): Observable<DatabaseDetail> {
+    return this.http.get<DatabaseDetail>(`/datasources/${guid}/database-detail`);
   }
 
   columns(guid: string, table: string): Observable<ColumnInfo[]> {

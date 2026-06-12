@@ -1,0 +1,167 @@
+<section class="restore-create">
+  <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
+    <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+      <sv label="备份记录 *" [col]="2">
+        <nz-select
+          formControlName="backupGuid"
+          nzShowSearch
+          nzPlaceHolder="选择成功完成的备份记录"
+          [nzLoading]="backupLoading"
+          (ngModelChange)="onBackupChange($event)"
+        >
+          @for (item of backups; track item.guid) {
+            <nz-option [nzValue]="item.guid" [nzLabel]="selectedBackupLabel(item)" />
+          }
+        </nz-select>
+        @if (form.controls.backupGuid.dirty && form.controls.backupGuid.invalid) {
+          <span class="field-error">请选择可恢复备份</span>
+        }
+      </sv>
+
+      <sv label="目标数据源" [col]="2">
+        <nz-select
+          formControlName="targetDataSourceGuid"
+          nzShowSearch
+          nzAllowClear
+          nzPlaceHolder="默认恢复到原数据源"
+          [nzLoading]="dataSourceLoading"
+        >
+          @for (item of dataSources; track item.guid) {
+            <nz-option
+              [nzValue]="item.guid"
+              [nzLabel]="item.name + ' · ' + item.type + ' · ' + (item.database || '-')"
+            />
+          }
+        </nz-select>
+        <span class="field-help">留空时使用备份记录中的原数据源。</span>
+      </sv>
+
+      <sv label="恢复表" [col]="2">
+        <nz-select
+          formControlName="tables"
+          nzMode="multiple"
+          nzShowSearch
+          nzPlaceHolder="不选择则恢复全部表"
+          [nzDisabled]="!selectedBackup"
+          [nzMaxTagCount]="4"
+        >
+          @for (table of backupTables(); track table) {
+            <nz-option [nzValue]="table" [nzLabel]="table" />
+          }
+        </nz-select>
+        <div class="table-tools">
+          <button
+            nz-button
+            nzSize="small"
+            type="button"
+            [disabled]="backupTables().length === 0"
+            (click)="selectAllTables()"
+          >
+            全选表
+          </button>
+          <button
+            nz-button
+            nzSize="small"
+            type="button"
+            [disabled]="form.controls.tables.value.length === 0"
+            (click)="clearTables()"
+          >
+            清空
+          </button>
+        </div>
+      </sv>
+
+      <sv label="恢复批次 *">
+        <nz-input-number formControlName="batchSize" [nzMin]="1" [nzPrecision]="0" />
+        @if (form.controls.batchSize.dirty && form.controls.batchSize.invalid) {
+          <span class="field-error">请输入大于 0 的批次大小</span>
+        }
+      </sv>
+
+      <sv label="写入模式 *">
+        <nz-select formControlName="writeMode">
+          <nz-option nzValue="insert" nzLabel="追加写入" />
+          <nz-option nzValue="replace" nzLabel="覆盖主键" />
+          <nz-option nzValue="upsert" nzLabel="冲突更新" />
+        </nz-select>
+      </sv>
+
+      <sv label="失败重试 *">
+        <nz-input-number formControlName="retryTimes" [nzMin]="0" [nzMax]="10" [nzPrecision]="0" />
+        @if (form.controls.retryTimes.dirty && form.controls.retryTimes.invalid) {
+          <span class="field-error">请输入 0-10 之间的重试次数</span>
+        }
+      </sv>
+
+      <sv label="重试间隔 ms *">
+        <nz-input-number
+          formControlName="retryIntervalMs"
+          [nzMin]="0"
+          [nzStep]="500"
+          [nzPrecision]="0"
+        />
+        @if (form.controls.retryIntervalMs.dirty && form.controls.retryIntervalMs.invalid) {
+          <span class="field-error">请输入大于等于 0 的重试间隔</span>
+        }
+      </sv>
+    </sv-container>
+
+    <div class="switch-grid">
+      <label class="switch-line">
+        <nz-switch formControlName="createTable" />
+        <span>
+          <strong>自动建表</strong>
+          <em>目标表不存在时按备份列定义创建。</em>
+        </span>
+      </label>
+      <label class="switch-line danger">
+        <nz-switch formControlName="truncateBeforeRestore" />
+        <span>
+          <strong>恢复前清空</strong>
+          <em>会先清空目标表，再写入备份数据。</em>
+        </span>
+      </label>
+    </div>
+
+    @if (form.controls.truncateBeforeRestore.value) {
+      <div class="danger-note">
+        <i nz-icon nzType="warning"></i>
+        <span>当前已开启恢复前清空，请确认目标数据源和表范围准确。</span>
+      </div>
+    }
+
+    <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+      <sv label="备注" [col]="2">
+        <textarea
+          nz-input
+          rows="3"
+          formControlName="remark"
+          placeholder="例如：恢复到测试库、回滚上线前数据、验证备份包完整性"
+        ></textarea>
+      </sv>
+    </sv-container>
+
+    <div class="restore-summary">
+      <div>
+        <span>来源</span>
+        <strong>{{ selectedBackup?.dataSourceName || '-' }}</strong>
+      </div>
+      <div>
+        <span>范围</span>
+        <strong>{{ form.controls.tables.value.length ? '指定表' : '全部表' }}</strong>
+      </div>
+      <div>
+        <span>数据量</span>
+        <strong>{{ rowCount(selectedBackup?.totalRows) }} 行</strong>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button nz-button type="button" (click)="cancel()">取消</button>
+      <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
+        <i nz-icon nzType="cloud-sync"></i>
+        开始恢复
+      </button>
+    </div>
+  </form>
+</section>

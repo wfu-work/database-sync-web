@@ -13,6 +13,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { finalize } from 'rxjs';
 
 import { DataSourcesService } from '../../datasources/datasources.service';
+import { SyncSystemSettings, SystemSettingsService } from '../../ops/system-settings.service';
 import { DatabaseBackupsService } from '../database-backups.service';
 
 const TDENGINE_BACKUP_PARAMS = {
@@ -37,6 +38,7 @@ export class DatabaseBackupCreateComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly backupsService = inject(DatabaseBackupsService);
   private readonly dataSourcesService = inject(DataSourcesService);
+  private readonly settingsService = inject(SystemSettingsService);
   private readonly message = inject(NzMessageService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -47,6 +49,7 @@ export class DatabaseBackupCreateComponent implements OnInit {
   protected tableLoading = false;
   protected saving = false;
   protected paramsError = '';
+  protected backupSettings: SyncSystemSettings | null = null;
 
   protected readonly form = this.fb.group({
     dataSourceGuid: ['', [Validators.required]],
@@ -59,6 +62,7 @@ export class DatabaseBackupCreateComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadSettings();
     this.loadDataSources();
   }
 
@@ -124,11 +128,11 @@ export class DatabaseBackupCreateComponent implements OnInit {
   }
 
   protected applyRecommendedParams(): void {
-    const params =
-      this.normalizeType(this.selectedDataSource()?.type) === 'tdengine'
-        ? TDENGINE_BACKUP_PARAMS
-        : MYSQL_BACKUP_PARAMS;
-    this.form.controls.connectionParams.setValue(JSON.stringify(params, null, 2));
+    const type = this.normalizeType(this.selectedDataSource()?.type);
+    const configured =
+      type === 'tdengine' ? this.backupSettings?.tdengineParams : this.backupSettings?.mysqlParams;
+    const fallback = type === 'tdengine' ? TDENGINE_BACKUP_PARAMS : MYSQL_BACKUP_PARAMS;
+    this.form.controls.connectionParams.setValue(this.prettyParams(configured, fallback));
     this.paramsError = '';
   }
 
@@ -189,6 +193,34 @@ export class DatabaseBackupCreateComponent implements OnInit {
       this.paramsError = '连接参数不是合法 JSON';
       return null;
     }
+  }
+
+  private prettyParams(configured: string | undefined, fallback: Record<string, string>): string {
+    try {
+      const parsed = configured ? (JSON.parse(configured) as unknown) : fallback;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return JSON.stringify(parsed, null, 2);
+      }
+    } catch {
+      // Use fallback below when saved settings are malformed.
+    }
+    return JSON.stringify(fallback, null, 2);
+  }
+
+  private loadSettings(): void {
+    this.settingsService.getSync().subscribe({
+      next: (settings) => {
+        this.backupSettings = settings;
+        this.form.patchValue({
+          batchSize: settings.backupBatchSize || 1000,
+          retryTimes: settings.backupRetryTimes ?? 2,
+          retryIntervalMs: settings.backupRetryIntervalMs ?? 1500,
+        });
+        this.applyRecommendedParams();
+        this.cdr.markForCheck();
+      },
+      error: () => undefined,
+    });
   }
 
   private loadDataSources(): void {

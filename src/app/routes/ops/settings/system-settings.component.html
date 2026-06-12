@@ -1,6 +1,6 @@
 <section class="settings-page">
   <div class="page-heading">
-    <title-label title="同步设置" description="维护同步、备份和运行监控的全局默认参数，保存后由后端统一存储。" />
+    <title-label title="同步设置" description="维护同步、备份、恢复和运行监控的全局默认参数。" />
     <div class="page-actions">
       <span class="saved-chip">更新时间 {{ formatTime(updateTime) }}</span>
       <button nz-button (click)="resetDefaults()">
@@ -15,119 +15,379 @@
   </div>
 
   <nz-spin [nzSpinning]="loading">
-    <form class="settings-layout" nz-form nzLayout="vertical" [formGroup]="form">
-      <nz-card class="settings-card" [nzBordered]="false">
-        <div class="card-heading">
-          <h2>备份默认值</h2>
-          <span>用于新建备份时的推荐配置</span>
-        </div>
-
-      <div class="form-grid">
-        <nz-form-item>
-          <nz-form-label nzRequired>默认批次大小</nz-form-label>
-          <nz-form-control nzErrorTip="请输入大于 0 的批次大小">
-            <nz-input-number formControlName="backupBatchSize" [nzMin]="1" [nzPrecision]="0" />
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label nzRequired>失败重试次数</nz-form-label>
-          <nz-form-control nzErrorTip="请输入重试次数">
-            <nz-input-number formControlName="backupRetryTimes" [nzMin]="0" [nzPrecision]="0" />
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label nzRequired>重试间隔 ms</nz-form-label>
-          <nz-form-control nzErrorTip="请输入重试间隔">
-            <nz-input-number
-              formControlName="backupRetryIntervalMs"
-              [nzMin]="0"
-              [nzStep]="500"
-              [nzPrecision]="0"
-            />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
-
-      <nz-form-item>
-        <nz-form-label>TDengine 默认连接参数</nz-form-label>
-        <nz-form-control>
-          <textarea nz-input rows="3" formControlName="tdengineParams"></textarea>
-        </nz-form-control>
-      </nz-form-item>
-
-      <nz-form-item>
-        <nz-form-label>MySQL 默认连接参数</nz-form-label>
-        <nz-form-control>
-          <textarea nz-input rows="3" formControlName="mysqlParams"></textarea>
-        </nz-form-control>
-      </nz-form-item>
-      </nz-card>
-
-      <div class="side-stack">
+    <form class="settings-layout" [formGroup]="form">
+      <section class="settings-column">
         <nz-card class="settings-card" [nzBordered]="false">
           <div class="card-heading">
-            <h2>同步与监控</h2>
-            <span>控制台侧默认体验</span>
+            <div>
+              <h2>同步执行</h2>
+              <span>新建同步任务和批量写入时的默认建议。</span>
+            </div>
+            <span class="card-chip">{{ form.controls.syncBatchSize.value }} 行/批</span>
           </div>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>同步默认批次</nz-form-label>
-          <nz-form-control nzErrorTip="请输入同步批次">
-            <nz-input-number formControlName="syncBatchSize" [nzMin]="1" [nzPrecision]="0" />
-          </nz-form-control>
-        </nz-form-item>
+          <div class="form-grid compact-grid">
+            <div class="setting-field">
+              <label class="field-label required">同步默认批次</label>
+              <p class="field-desc">每批读取和写入的数据行数。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="syncBatchSize" [nzMin]="1" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.syncBatchSize.dirty && form.controls.syncBatchSize.invalid) {
+                <span class="field-error">请输入大于 0 的同步批次</span>
+              } @else {
+                <span class="field-meta">建议 500-2000 行</span>
+              }
+            </div>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>监控刷新秒数</nz-form-label>
-          <nz-form-control nzErrorTip="刷新间隔至少 3 秒">
-            <nz-input-number
-              formControlName="monitorRefreshSeconds"
-              [nzMin]="3"
-              [nzPrecision]="0"
-            />
-          </nz-form-control>
-        </nz-form-item>
+            <div class="setting-field">
+              <label class="field-label required">同步重试次数</label>
+              <p class="field-desc">批次失败后的自动重试次数。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="syncRetryTimes" [nzMin]="0" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.syncRetryTimes.dirty && form.controls.syncRetryTimes.invalid) {
+                <span class="field-error">请输入大于等于 0 的重试次数</span>
+              } @else {
+                <span class="field-meta">0 表示不重试</span>
+              }
+            </div>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>日志级别</nz-form-label>
-          <nz-form-control>
-            <nz-select formControlName="logLevel">
-              <nz-option nzValue="debug" nzLabel="debug" />
-              <nz-option nzValue="info" nzLabel="info" />
-              <nz-option nzValue="warn" nzLabel="warn" />
-              <nz-option nzValue="error" nzLabel="error" />
-            </nz-select>
-          </nz-form-control>
-        </nz-form-item>
+            <div class="setting-field">
+              <label class="field-label required">重试间隔 ms</label>
+              <p class="field-desc">两次同步重试之间等待时间。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="syncRetryIntervalMs"
+                  [nzMin]="0"
+                  [nzStep]="500"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.syncRetryIntervalMs.dirty && form.controls.syncRetryIntervalMs.invalid
+              ) {
+                <span class="field-error">请输入大于等于 0 的间隔</span>
+              } @else {
+                <span class="field-meta">毫秒，常用 1000-3000</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">同步超时</label>
+              <p class="field-desc">单次同步任务最长执行时间。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="syncTimeoutSeconds"
+                  [nzMin]="1"
+                  [nzStep]="60"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.syncTimeoutSeconds.dirty && form.controls.syncTimeoutSeconds.invalid
+              ) {
+                <span class="field-error">请输入大于 0 的超时时间</span>
+              } @else {
+                <span class="field-meta">{{
+                  durationLabel(form.controls.syncTimeoutSeconds.value)
+                }}</span>
+              }
+            </div>
+          </div>
         </nz-card>
 
         <nz-card class="settings-card" [nzBordered]="false">
           <div class="card-heading">
-            <h2>保留策略</h2>
-            <span>用于后续后端清理任务</span>
+            <div>
+              <h2>备份与恢复</h2>
+              <span>备份导出和备份恢复页面会优先使用这些默认值。</span>
+            </div>
+            <span class="card-chip">恢复 {{ form.controls.restoreWriteMode.value }}</span>
           </div>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>通知保留天数</nz-form-label>
-          <nz-form-control nzErrorTip="请输入保留天数">
-            <nz-input-number
-              formControlName="notificationRetentionDays"
-              [nzMin]="1"
-              [nzPrecision]="0"
-            />
-          </nz-form-control>
-        </nz-form-item>
+          <div class="form-grid compact-grid">
+            <div class="setting-field">
+              <label class="field-label required">备份批次大小</label>
+              <p class="field-desc">每批导出的数据行数。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="backupBatchSize" [nzMin]="1" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.backupBatchSize.dirty && form.controls.backupBatchSize.invalid) {
+                <span class="field-error">请输入大于 0 的批次大小</span>
+              } @else {
+                <span class="field-meta">大批次速度更快但更占内存</span>
+              }
+            </div>
 
-        <nz-form-item>
-          <nz-form-label nzRequired>备份保留天数</nz-form-label>
-          <nz-form-control nzErrorTip="请输入保留天数">
-            <nz-input-number formControlName="backupRetentionDays" [nzMin]="1" [nzPrecision]="0" />
-          </nz-form-control>
-        </nz-form-item>
+            <div class="setting-field">
+              <label class="field-label required">备份重试次数</label>
+              <p class="field-desc">导出失败后重新读取的次数。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="backupRetryTimes" [nzMin]="0" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.backupRetryTimes.dirty && form.controls.backupRetryTimes.invalid) {
+                <span class="field-error">请输入大于等于 0 的重试次数</span>
+              } @else {
+                <span class="field-meta">网络波动时建议保留重试</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">备份重试间隔 ms</label>
+              <p class="field-desc">备份批次重试前等待时间。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="backupRetryIntervalMs"
+                  [nzMin]="0"
+                  [nzStep]="500"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.backupRetryIntervalMs.dirty &&
+                form.controls.backupRetryIntervalMs.invalid
+              ) {
+                <span class="field-error">请输入大于等于 0 的间隔</span>
+              } @else {
+                <span class="field-meta">毫秒，适合短暂连接抖动</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">备份超时</label>
+              <p class="field-desc">单次备份任务最长执行时间。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="backupTimeoutSeconds"
+                  [nzMin]="1"
+                  [nzStep]="60"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.backupTimeoutSeconds.dirty &&
+                form.controls.backupTimeoutSeconds.invalid
+              ) {
+                <span class="field-error">请输入大于 0 的超时时间</span>
+              } @else {
+                <span class="field-meta">{{
+                  durationLabel(form.controls.backupTimeoutSeconds.value)
+                }}</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">恢复批次大小</label>
+              <p class="field-desc">每批写入目标库的数据行数。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="restoreBatchSize" [nzMin]="1" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.restoreBatchSize.dirty && form.controls.restoreBatchSize.invalid) {
+                <span class="field-error">请输入大于 0 的恢复批次</span>
+              } @else {
+                <span class="field-meta">目标库压力大时可调小</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">恢复写入模式</label>
+              <p class="field-desc">恢复页面默认使用的写入策略。</p>
+              <div class="field-control">
+                <nz-select formControlName="restoreWriteMode">
+                  <nz-option nzValue="insert" nzLabel="追加写入" />
+                  <nz-option nzValue="replace" nzLabel="覆盖主键" />
+                  <nz-option nzValue="upsert" nzLabel="冲突更新" />
+                </nz-select>
+              </div>
+              <span class="field-meta">可在恢复时单独调整</span>
+            </div>
+          </div>
+
+          <div class="switch-grid">
+            <label class="switch-line">
+              <nz-switch formControlName="restoreCreateTable" />
+              <span>
+                <strong>恢复默认自动建表</strong>
+                <em>目标表不存在时使用备份列定义创建。</em>
+              </span>
+            </label>
+            <label class="switch-line danger">
+              <nz-switch formControlName="restoreTruncateBefore" />
+              <span>
+                <strong>恢复默认清空目标表</strong>
+                <em>仅在明确需要覆盖目标数据时启用。</em>
+              </span>
+            </label>
+          </div>
         </nz-card>
-      </div>
+      </section>
+
+      <section class="settings-column">
+        <nz-card class="settings-card" [nzBordered]="false">
+          <div class="card-heading">
+            <div>
+              <h2>连接参数</h2>
+              <span>作为新建备份和恢复的推荐连接参数模板。</span>
+            </div>
+          </div>
+
+          <div class="form-grid textarea-grid">
+            <div class="setting-field textarea-field">
+              <label class="field-label">TDengine 默认连接参数</label>
+              <p class="field-desc">TDengine REST 连接模板，保存为 JSON 对象。</p>
+              <textarea nz-input rows="5" formControlName="tdengineParams"></textarea>
+              <span class="field-meta">例如 timeout 用于长时间导出或恢复</span>
+            </div>
+
+            <div class="setting-field textarea-field">
+              <label class="field-label">MySQL 默认连接参数</label>
+              <p class="field-desc">MySQL DSN 参数模板，保存为 JSON 对象。</p>
+              <textarea nz-input rows="5" formControlName="mysqlParams"></textarea>
+              <span class="field-meta">可设置 timeout、readTimeout、writeTimeout</span>
+            </div>
+          </div>
+        </nz-card>
+
+        <nz-card class="settings-card" [nzBordered]="false">
+          <div class="card-heading">
+            <div>
+              <h2>监控与保留</h2>
+              <span>运行监控、连接检查和历史记录保留策略。</span>
+            </div>
+            <span class="card-chip">{{ form.controls.logLevel.value }}</span>
+          </div>
+
+          <div class="form-grid side-grid">
+            <div class="setting-field">
+              <label class="field-label required">监控刷新秒数</label>
+              <p class="field-desc">控制台运行状态刷新频率。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="monitorRefreshSeconds"
+                  [nzMin]="3"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.monitorRefreshSeconds.dirty &&
+                form.controls.monitorRefreshSeconds.invalid
+              ) {
+                <span class="field-error">刷新间隔至少 3 秒</span>
+              } @else {
+                <span class="field-meta">秒，越小越实时</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">健康检查秒数</label>
+              <p class="field-desc">后台检测数据源连接的频率。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="healthCheckIntervalSec"
+                  [nzMin]="10"
+                  [nzStep]="10"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.healthCheckIntervalSec.dirty &&
+                form.controls.healthCheckIntervalSec.invalid
+              ) {
+                <span class="field-error">检查间隔至少 10 秒</span>
+              } @else {
+                <span class="field-meta">秒，影响健康列表更新</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">日志级别</label>
+              <p class="field-desc">后端运行日志默认输出级别。</p>
+              <div class="field-control">
+                <nz-select formControlName="logLevel">
+                  <nz-option nzValue="debug" nzLabel="debug" />
+                  <nz-option nzValue="info" nzLabel="info" />
+                  <nz-option nzValue="warn" nzLabel="warn" />
+                  <nz-option nzValue="error" nzLabel="error" />
+                </nz-select>
+              </div>
+              <span class="field-meta">生产环境建议 info 或 warn</span>
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">运行保留天数</label>
+              <p class="field-desc">同步运行历史保留时长。</p>
+              <div class="field-control">
+                <nz-input-number formControlName="runRetentionDays" [nzMin]="1" [nzPrecision]="0" />
+              </div>
+              @if (form.controls.runRetentionDays.dirty && form.controls.runRetentionDays.invalid) {
+                <span class="field-error">请输入大于 0 的保留天数</span>
+              } @else {
+                <span class="field-meta">天，过期记录可清理</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">通知保留天数</label>
+              <p class="field-desc">事件通知和告警保留时长。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="notificationRetentionDays"
+                  [nzMin]="1"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.notificationRetentionDays.dirty &&
+                form.controls.notificationRetentionDays.invalid
+              ) {
+                <span class="field-error">请输入大于 0 的保留天数</span>
+              } @else {
+                <span class="field-meta">天，避免通知堆积</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">备份保留天数</label>
+              <p class="field-desc">备份历史和文件保留策略。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="backupRetentionDays"
+                  [nzMin]="1"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.backupRetentionDays.dirty && form.controls.backupRetentionDays.invalid
+              ) {
+                <span class="field-error">请输入大于 0 的保留天数</span>
+              } @else {
+                <span class="field-meta">天，请结合磁盘容量设置</span>
+              }
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label required">恢复保留天数</label>
+              <p class="field-desc">备份恢复历史保留时长。</p>
+              <div class="field-control">
+                <nz-input-number
+                  formControlName="restoreRetentionDays"
+                  [nzMin]="1"
+                  [nzPrecision]="0"
+                />
+              </div>
+              @if (
+                form.controls.restoreRetentionDays.dirty &&
+                form.controls.restoreRetentionDays.invalid
+              ) {
+                <span class="field-error">请输入大于 0 的保留天数</span>
+              } @else {
+                <span class="field-meta">天，便于追踪恢复结果</span>
+              }
+            </div>
+          </div>
+        </nz-card>
+      </section>
     </form>
   </nz-spin>
 </section>

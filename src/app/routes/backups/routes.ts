@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { DatabaseBackupCreateComponent } from './create/database-backup-create.component';
 import { DatabaseBackupListComponent } from './history/database-backup-list.component';
 import { BackupPolicyComponent } from './policies/backup-policy.component';
+import { DatabaseRestoreComponent } from './restore/database-restore.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'history', pathMatch: 'full' },
@@ -20,5 +21,10 @@ export const routes: Routes = [
     path: 'policies',
     component: BackupPolicyComponent,
     data: { title: '备份策略' },
+  },
+  {
+    path: 'restore',
+    component: DatabaseRestoreComponent,
+    data: { title: '备份恢复' },
   },
 ];

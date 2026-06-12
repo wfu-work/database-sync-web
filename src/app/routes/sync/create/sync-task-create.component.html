@@ -1,13 +1,41 @@
 <section class="sync-task-create-page">
   <div class="page-heading">
-    <title-label title="新建任务" description="配置源表、目标表、同步模式、字段映射和写入策略。" />
+    <title-label [title]="pageTitle" [description]="pageDescription" [showBack]="taskGuid !== ''" />
   </div>
 
   <div class="create-layout">
-    <nz-card class="form-card" [nzBordered]="false">
+    <nz-card class="form-card" [nzBordered]="false" [nzLoading]="loadingTask">
       <div class="form-title">
-        <h2>新建同步任务</h2>
+        <h2>{{ formTitle }}</h2>
       </div>
+
+      @if (!editingTask) {
+        <div class="template-picker">
+          <div>
+            <strong>套用模板</strong>
+            <span>选择后会填充源表、目标表、字段映射和同步策略。</span>
+          </div>
+          <nz-select
+            [(ngModel)]="selectedTemplateGuid"
+            nzShowSearch
+            nzAllowClear
+            nzPlaceHolder="选择同步模板"
+            [nzLoading]="templateLoading"
+            (ngModelChange)="onTemplateChange($event)"
+          >
+            @for (item of templates; track item.guid) {
+              <nz-option
+                [nzValue]="item.guid"
+                [nzLabel]="item.name + ' · ' + modeLabel(item.mode)"
+              />
+            }
+          </nz-select>
+          <button nz-button type="button" (click)="goTemplates()">
+            <i nz-icon nzType="profile"></i>
+            模板管理
+          </button>
+        </div>
+      }
 
       <form class="sv-form" [formGroup]="form" (ngSubmit)="submit()">
         <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
@@ -183,7 +211,7 @@
             </nz-select>
           </sv>
 
-          <sv label="源表过滤条件" [col]="2">
+          <sv label="源表过滤条件" [col]="1">
             <textarea
               nz-input
               formControlName="whereClause"
@@ -192,10 +220,112 @@
             ></textarea>
           </sv>
 
+          @if (tdengineSourceSelected) {
+            <sv label="同步时间字段 *">
+              <input
+                nz-input
+                formControlName="syncTimeField"
+                list="create-source-column-options"
+                placeholder="例如：gps_time 或 time"
+              />
+            </sv>
+
+            <sv label="同步开始日期 *">
+              <input nz-input formControlName="syncStartDate" placeholder="例如：2026-06-01" />
+            </sv>
+
+            <sv label="同步结束日期">
+              <input
+                nz-input
+                formControlName="syncEndDate"
+                placeholder="默认当前时间，例如：2026-06-12"
+              />
+            </sv>
+          }
+
+          @if (tdengineTargetSelected) {
+            <sv label="目标子表名模板 *">
+              <input
+                nz-input
+                formControlName="tdengineChildTableTemplate"
+                placeholder="例如：kalman_${rover_name}_${base_name}"
+              />
+            </sv>
+
+            <sv label="目标 TAG 配置 *" [col]="1">
+              <span class="field-toolbar">
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  type="button"
+                  (click)="generateSameNameTags()"
+                >
+                  同名 TAG 生成
+                </button>
+                <button
+                  nz-button
+                  nzType="link"
+                  nzSize="small"
+                  type="button"
+                  (click)="clearTagValues()"
+                >
+                  清空
+                </button>
+              </span>
+              @if (tagRows.length > 0) {
+                <div class="tag-mapping-list" [class.field-invalid-box]="tagError">
+                  @for (tag of tagRows; track tag.name) {
+                    <div class="tag-mapping-row">
+                      <div class="tag-meta">
+                        <strong>{{ tag.name }}</strong>
+                        <span>{{ tag.databaseType || 'TAG' }}</span>
+                        @if (tag.comment) {
+                          <em>{{ tag.comment }}</em>
+                        }
+                      </div>
+                      <nz-select
+                        [(ngModel)]="tag.source"
+                        [ngModelOptions]="{ standalone: true }"
+                        nzAllowClear
+                        nzShowSearch
+                        nzPlaceHolder="来源字段"
+                        (ngModelChange)="onTagRowChange()"
+                      >
+                        @for (column of sourceColumns; track column.name) {
+                          <nz-option [nzValue]="column.name" [nzLabel]="column.name" />
+                        }
+                      </nz-select>
+                      <input
+                        nz-input
+                        [(ngModel)]="tag.defaultValue"
+                        [ngModelOptions]="{ standalone: true }"
+                        placeholder="默认值"
+                        (ngModelChange)="onTagRowChange()"
+                      />
+                      <input
+                        nz-input
+                        [(ngModel)]="tag.transform"
+                        [ngModelOptions]="{ standalone: true }"
+                        placeholder="转换"
+                        (ngModelChange)="onTagRowChange()"
+                      />
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="tag-empty-state">选择 TDengine 目标超级表后，会自动读取 TAG 结构。</div>
+              }
+              @if (tagError) {
+                <span class="field-error">{{ tagError }}</span>
+              }
+            </sv>
+          }
+
           <sv label="定时执行">
             <nz-select formControlName="scheduleOn">
               <nz-option [nzValue]="0" nzLabel="手动执行" />
-              <nz-option [nzValue]="1" nzLabel="启用定时" />
+              <nz-option [nzValue]="1" nzLabel="定时执行" />
             </nz-select>
           </sv>
 
@@ -209,6 +339,15 @@
             <span class="field-toolbar">
               <button nz-button nzType="link" nzSize="small" type="button" (click)="insertSample()">
                 插入示例
+              </button>
+              <button
+                nz-button
+                nzType="link"
+                nzSize="small"
+                type="button"
+                (click)="formatFieldsJson()"
+              >
+                格式化
               </button>
               <button
                 nz-button
@@ -242,12 +381,14 @@
         }
 
         <div class="form-actions">
-          <button nz-button type="button" (click)="resetForm()">重置</button>
+          @if (!editingTask) {
+            <button nz-button type="button" (click)="resetForm()">重置</button>
+          }
           <button nz-button type="button" [nzLoading]="validationLoading" (click)="validateForm()">
             校验配置
           </button>
           <button nz-button nzType="primary" htmlType="submit" [nzLoading]="saving">
-            创建任务
+            {{ submitText }}
           </button>
         </div>
       </form>
@@ -342,13 +483,16 @@
         <h3>字段映射写法</h3>
         <ul class="context-list">
           <li>
-            <i nz-icon nzType="check-circle"></i><span>source 表示源字段，target 表示写入目标字段。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>source 表示源字段，target 表示写入目标字段。</span>
           </li>
           <li>
-            <i nz-icon nzType="check-circle"></i><span>default 可写入固定值，适合补充来源、类型或租户标识。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>default 可写入固定值，适合补充来源、类型或租户标识。</span>
           </li>
           <li>
-            <i nz-icon nzType="check-circle"></i><span>transform 可用于时间、数字等格式转换，保存前先校验配置。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>transform 可用于时间、数字等格式转换，保存前先校验配置。</span>
           </li>
         </ul>
       </section>
@@ -375,13 +519,16 @@
         <h3>提交前检查</h3>
         <ul class="context-list">
           <li>
-            <i nz-icon nzType="check-circle"></i><span>先读取源表和目标表字段，确认字段名和类型匹配。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>先读取源表和目标表字段，确认字段名和类型匹配。</span>
           </li>
           <li>
-            <i nz-icon nzType="check-circle"></i><span>使用过滤条件时，建议先预估源数据量，避免误同步过多数据。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>使用过滤条件时，建议先预估源数据量，避免误同步过多数据。</span>
           </li>
           <li>
-            <i nz-icon nzType="check-circle"></i><span>启用定时前先手动执行一次，确认游标推进和写入结果正常。</span>
+            <i nz-icon nzType="check-circle"></i
+            ><span>启用定时前先手动执行一次，确认游标推进和写入结果正常。</span>
           </li>
         </ul>
       </section>

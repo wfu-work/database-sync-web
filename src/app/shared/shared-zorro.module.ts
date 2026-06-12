@@ -18,6 +18,7 @@ import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 
@@ -44,4 +45,5 @@ export const SHARED_ZORRO_MODULES = [
   NzIconModule,
   NzCheckboxModule,
   NzSpinModule,
+  NzSwitchModule,
 ];

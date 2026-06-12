@@ -46,7 +46,10 @@
     <nz-card class="detail-card" [nzBordered]="false">
       <div class="detail-card-title">
         <h2>{{ run?.taskName || '同步运行' }}</h2>
-        <code>{{ guid }}</code>
+        <div class="run-guid-pill">
+          <span>运行 GUID</span>
+          <code>{{ guid }}</code>
+        </div>
       </div>
       <nz-progress [nzPercent]="percent" [nzStatus]="progressStatus" />
       <div class="detail-grid">
@@ -107,6 +110,7 @@
       [total]="errorsTotal"
       [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
       (change)="errorTableChange($event)"
+      class="mt-lg"
     >
       <ng-template st-row="sourcePkRender" let-item>
         <span class="mono">{{ item.sourcePk || '-' }}</span>

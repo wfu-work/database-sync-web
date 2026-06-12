@@ -1,7 +1,7 @@
 <section class="guide-page">
   <title-label
     title="使用指南"
-    description="按最小闭环完成数据源配置、任务映射、手动执行和失败排查。"
+    description="按最小闭环完成数据源配置、模板复用、同步执行、备份恢复和运行监控。"
   />
 
   <div class="guide-flow">
@@ -43,6 +43,57 @@
         <span>字段映射</span>
         <code>source / target / transform</code>
       </div>
+    </div>
+  </nz-card>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <div class="section-heading">
+      <h2>新增模块入口</h2>
+      <span>最近新增能力的日常操作入口。</span>
+    </div>
+    <div class="quick-grid">
+      @for (item of moduleItems; track item.label) {
+        <a class="quick-card" [routerLink]="item.path">
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.desc }}</span>
+          <i nz-icon nzType="arrow-right"></i>
+        </a>
+      }
+    </div>
+  </nz-card>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <div class="section-heading">
+      <h2>备份与恢复入口</h2>
+      <span>数据备份菜单下的三个常用页面。</span>
+    </div>
+    <div class="quick-grid">
+      @for (item of backupItems; track item.label) {
+        <a class="quick-card" [routerLink]="item.path">
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.desc }}</span>
+          <i nz-icon nzType="arrow-right"></i>
+        </a>
+      }
+    </div>
+  </nz-card>
+
+  <nz-card class="guide-card" [nzBordered]="false">
+    <div class="section-heading">
+      <h2>同步设置覆盖范围</h2>
+      <span>这些设置会作为创建同步、备份和恢复时的默认建议。</span>
+    </div>
+    <div class="setting-grid">
+      @for (group of settingGroups; track group.label) {
+        <div>
+          <strong>{{ group.label }}</strong>
+          <div class="field-list">
+            @for (field of group.fields; track field) {
+              <code>{{ field }}</code>
+            }
+          </div>
+        </div>
+      }
     </div>
   </nz-card>
 

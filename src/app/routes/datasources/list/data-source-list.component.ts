@@ -9,7 +9,13 @@ import { NonNullableFormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { STChange, STColumn } from '@delon/abc/st';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
-import { ColumnInfo, DataSource, DataSourceType, MapperRow, TableInfo } from '@shared/types/datasync';
+import {
+  ColumnInfo,
+  DataSource,
+  DataSourceType,
+  MapperRow,
+  TableInfo,
+} from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { finalize } from 'rxjs';
@@ -112,6 +118,7 @@ export class DataSourceListComponent implements OnInit {
 
   protected test(item: DataSource): void {
     this.testingGuid = item.guid;
+    this.markConnectionChecking(item.guid);
     this.service
       .test(item.guid)
       .pipe(
@@ -121,8 +128,14 @@ export class DataSourceListComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: () => this.message.success('连接测试通过'),
-        error: (err) => this.message.error(err?.msg || err?.message || '连接测试失败'),
+        next: () => {
+          this.message.success('连接测试通过');
+          this.getData();
+        },
+        error: (err) => {
+          this.message.error(err?.msg || err?.message || '连接测试失败');
+          this.getData();
+        },
       });
   }
 
@@ -300,6 +313,21 @@ export class DataSourceListComponent implements OnInit {
 
   private normalizeType(type: string): DataSourceType {
     return type === 'tdengine' || type === 'td' || type === 'taos' ? 'tdengine' : 'mysql';
+  }
+
+  private markConnectionChecking(guid: string): void {
+    const now = Date.now();
+    this.data = this.data.map((item) =>
+      item.guid === guid
+        ? {
+            ...item,
+            connectionStatus: 'checking',
+            connectionCheckedAt: now,
+            connectionError: '',
+          }
+        : item,
+    );
+    this.cdr.markForCheck();
   }
 
   protected isConnectionStatus(item: DataSource, status: string): boolean {

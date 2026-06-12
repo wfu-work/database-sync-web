@@ -22,23 +22,39 @@
   flex-wrap: wrap;
 }
 
-.saved-chip {
+.saved-chip,
+.card-chip {
   display: inline-flex;
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
+}
+
+.saved-chip {
   color: #667085;
   background: #f2f5f9;
 }
 
+.card-chip {
+  color: var(--nm-primary);
+  background: rgb(var(--nm-primary-rgb) / 10%);
+}
+
 .settings-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.85fr);
+  grid-template-columns: minmax(0, 1.18fr) minmax(380px, 0.82fr);
   gap: 18px;
   align-items: start;
+}
+
+.settings-column {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
 }
 
 .settings-card {
@@ -47,45 +63,201 @@
   border-radius: 8px;
 }
 
+:host ::ng-deep .settings-card .ant-card-body {
+  padding: 22px 24px;
+}
+
 .card-heading {
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.card-heading div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .card-heading h2 {
   margin: 0;
   font-size: 18px;
+  font-weight: 800;
   color: #1f2a3d;
 }
 
 .card-heading span {
   font-size: 12px;
+  line-height: 1.5;
   color: #6b778c;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px 18px;
 }
 
-.side-stack {
+.compact-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.side-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setting-field {
   display: grid;
-  gap: 18px;
+  grid-template-rows: auto minmax(38px, auto) auto minmax(20px, auto);
+  gap: 8px;
+  min-width: 0;
+  min-height: 150px;
+}
+
+.textarea-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.textarea-field {
+  min-height: 0;
+}
+
+.field-label {
+  position: relative;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #172033;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-label.required::before {
+  content: '*';
+  margin-right: 6px;
+  font-weight: 800;
+  color: #ff4d4f;
+}
+
+.field-desc {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 38px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #718096;
+}
+
+.field-control {
+  min-width: 0;
 }
 
 nz-input-number,
-nz-select {
+nz-select,
+.field-control textarea {
   width: 100%;
 }
 
 textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  line-height: 1.55;
+}
+
+.field-meta,
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.field-meta {
+  color: #718096;
+}
+
+.field-error {
+  color: #b42318;
+}
+
+.switch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.switch-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e7edf5;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.switch-line strong,
+.switch-line em {
+  display: block;
+}
+
+.switch-line strong {
+  font-weight: 800;
+  font-style: normal;
+  color: #203049;
+}
+
+.switch-line em {
+  margin-top: 3px;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.6;
+  color: #6b778c;
+}
+
+.switch-line.danger {
+  background: #fff9f6;
+}
+
+@media (max-width: 1320px) {
+  .compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setting-field {
+    min-height: 142px;
+  }
 }
 
 @media (max-width: 1100px) {
   .settings-layout,
-  .form-grid {
-    grid-template-columns: 1fr;
+  .side-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .page-heading,
+  .card-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  :host ::ng-deep .settings-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .compact-grid,
+  .switch-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .setting-field {
+    min-height: 0;
   }
 }

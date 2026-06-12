@@ -1,12 +1,24 @@
 import { HttpClient, HttpContext, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { RAW_BODY } from '@delon/theme';
-import { DatabaseBackup, StartDatabaseBackupPayload } from '@shared/types/datasync';
+import {
+  DatabaseBackup,
+  DatabaseRestore,
+  StartDatabaseBackupPayload,
+  StartDatabaseRestorePayload,
+} from '@shared/types/datasync';
 import { PageQuery, PageResult } from '@shared/types/page';
 import { Observable } from 'rxjs';
 
 export interface DatabaseBackupQuery extends PageQuery {
   dataSourceGuid?: string;
+  status?: string;
+}
+
+export interface DatabaseRestoreQuery extends PageQuery {
+  backupGuid?: string;
+  targetDataSourceGuid?: string;
+  status?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +43,20 @@ export class DatabaseBackupsService {
     return this.http.post<DatabaseBackup>(`/backups/${guid}/retry`, {});
   }
 
+  restore(guid: string, payload: StartDatabaseRestorePayload): Observable<DatabaseRestore> {
+    return this.http.post<DatabaseRestore>(`/backups/${guid}/restore`, payload);
+  }
+
+  restoreList(query: DatabaseRestoreQuery = {}): Observable<PageResult<DatabaseRestore>> {
+    return this.http.get<PageResult<DatabaseRestore>>('/backup-restores/list', {
+      params: this.toParams(query),
+    });
+  }
+
+  restoreGet(guid: string): Observable<DatabaseRestore> {
+    return this.http.get<DatabaseRestore>(`/backup-restores/${guid}`);
+  }
+
   delete(guid: string): Observable<boolean> {
     return this.http.delete<boolean>(`/backups/${guid}`);
   }
@@ -43,7 +69,7 @@ export class DatabaseBackupsService {
     });
   }
 
-  private toParams(query: DatabaseBackupQuery): HttpParams {
+  private toParams(query: DatabaseBackupQuery | DatabaseRestoreQuery): HttpParams {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value === undefined || value === null || value === '') return;

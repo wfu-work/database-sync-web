@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AppWebSocketService } from '@shared/services/app-websocket.service';
 import { EventNotificationsService } from '@shared/services/event-notifications.service';
 import { EventNotification } from '@shared/types/datasync';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
@@ -19,6 +20,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { EMPTY, catchError, switchMap, timer } from 'rxjs';
 
 type HeaderMessageLevel = 'info' | 'warning' | 'error';
@@ -299,6 +301,8 @@ export interface HeaderMessageItem {
 export class HeaderMessage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(EventNotificationsService);
+  private readonly ws = inject(AppWebSocketService);
+  private readonly notification = inject(NzNotificationService);
 
   @Input() title = '消息通知';
   @Input() emptyText = '暂无消息';
@@ -319,26 +323,35 @@ export class HeaderMessage implements OnInit {
   ngOnInit(): void {
     timer(0, 30000)
       .pipe(
-        switchMap(() =>
-          this.service.list({ page: 1, size: 20 }).pipe(catchError(() => EMPTY)),
-        ),
+        switchMap(() => this.service.list({ page: 1, size: 20 }).pipe(catchError(() => EMPTY))),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((res) => {
         this.messages.set((res.data ?? []).map((item) => this.toHeaderMessage(item)));
       });
+
+    this.ws
+      .on<EventNotification>('notification.created')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((item) => this.applyNotification(item));
   }
 
   protected markRead(id: string): void {
     this.messages.update((list) =>
       list.map((item) => (item.id === id ? { ...item, read: true } : item)),
     );
-    this.service.markRead(id).pipe(catchError(() => EMPTY)).subscribe();
+    this.service
+      .markRead(id)
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
   }
 
   protected markAllRead(): void {
     this.messages.update((list) => list.map((item) => ({ ...item, read: true })));
-    this.service.markAllRead().pipe(catchError(() => EMPTY)).subscribe();
+    this.service
+      .markAllRead()
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
   }
 
   protected handleItemClick(item: HeaderMessageItem): void {
@@ -364,5 +377,30 @@ export class HeaderMessage implements OnInit {
       return level;
     }
     return 'info';
+  }
+
+  private applyNotification(item: EventNotification): void {
+    if (!item?.guid) return;
+    const message = this.toHeaderMessage(item);
+    this.messages.update((list) =>
+      [message, ...list.filter((current) => current.id !== message.id)].slice(0, 20),
+    );
+    this.popup(item);
+  }
+
+  private popup(item: EventNotification): void {
+    const title = item.title || '系统通知';
+    const content = item.content || '';
+    switch (this.normalizeLevel(item.level)) {
+      case 'error':
+        this.notification.error(title, content);
+        break;
+      case 'warning':
+        this.notification.warning(title, content);
+        break;
+      default:
+        this.notification.info(title, content);
+        break;
+    }
   }
 }

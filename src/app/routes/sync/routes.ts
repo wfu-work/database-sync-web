@@ -5,6 +5,7 @@ import { SyncRunDetailComponent } from './run-detail/sync-run-detail.component';
 import { SyncRunListComponent } from './runs/sync-run-list.component';
 import { SyncScheduleListComponent } from './schedules/sync-schedule-list.component';
 import { SyncTaskListComponent } from './tasks/sync-task-list.component';
+import { SyncTemplateListComponent } from './templates/sync-template-list.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'tasks/list', pathMatch: 'full' },
@@ -17,6 +18,16 @@ export const routes: Routes = [
     path: 'tasks/create',
     component: SyncTaskCreateComponent,
     data: { title: '新建任务' },
+  },
+  {
+    path: 'tasks/:guid/edit',
+    component: SyncTaskCreateComponent,
+    data: { title: '编辑任务' },
+  },
+  {
+    path: 'templates',
+    component: SyncTemplateListComponent,
+    data: { title: '同步模板' },
   },
   {
     path: 'runs/list',
