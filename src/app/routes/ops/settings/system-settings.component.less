@@ -1,0 +1,91 @@
+:host {
+  display: block;
+}
+
+.settings-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.page-heading,
+.page-actions,
+.card-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.page-actions {
+  flex-wrap: wrap;
+}
+
+.saved-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #667085;
+  background: #f2f5f9;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.settings-card {
+  min-width: 0;
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+}
+
+.card-heading {
+  margin-bottom: 16px;
+}
+
+.card-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2a3d;
+}
+
+.card-heading span {
+  font-size: 12px;
+  color: #6b778c;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.side-stack {
+  display: grid;
+  gap: 18px;
+}
+
+nz-input-number,
+nz-select {
+  width: 100%;
+}
+
+textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  resize: vertical;
+}
+
+@media (max-width: 1100px) {
+  .settings-layout,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,100 @@
+<section class="monitor-page">
+  <div class="page-heading">
+    <title-label title="运行监控" description="集中观察正在运行和失败待处理的同步、备份、连接与通知状态。" />
+    <div class="page-actions">
+      <span class="refresh-chip">更新 {{ formatTime(lastUpdated) }}</span>
+      <button nz-button (click)="toggleAutoRefresh()">
+        <i nz-icon [nzType]="autoRefresh ? 'pause-circle' : 'play-circle'"></i>
+        {{ autoRefresh ? '暂停刷新' : '自动刷新' }}
+      </button>
+      <button nz-button nzType="primary" [nzLoading]="loading" (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    @for (item of metrics(); track item.label) {
+      <button type="button" class="metric-card" [class]="'metric-' + item.tone" (click)="openLink(item.link)">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </button>
+    }
+  </div>
+
+  <div class="monitor-layout">
+    <nz-card class="monitor-card activity-card" [nzBordered]="false">
+      <div class="card-heading">
+        <h2>运行中</h2>
+        <span>{{ activities().length }} 个活动任务</span>
+      </div>
+
+      <div class="activity-list">
+        @for (item of activities(); track item.kind + item.guid) {
+          <a class="activity-row" [routerLink]="item.link">
+            <div class="activity-main">
+              <span class="kind" [class.kind-backup]="item.kind === 'backup'">
+                {{ item.kind === 'sync' ? '同步' : '备份' }}
+              </span>
+              <div>
+                <strong>{{ item.title }}</strong>
+                <em>{{ item.subTitle }} · 已运行 {{ item.elapsed }}</em>
+              </div>
+            </div>
+            <div class="activity-progress">
+              <nz-progress [nzPercent]="item.percent" [nzShowInfo]="false" nzStatus="active" />
+              <span>{{ item.status }} {{ item.percent }}%</span>
+            </div>
+          </a>
+        } @empty {
+          <div class="empty-state">暂无运行中的同步或备份任务。</div>
+        }
+      </div>
+    </nz-card>
+
+    <div class="side-stack">
+      <nz-card class="monitor-card" [nzBordered]="false">
+        <div class="card-heading">
+          <h2>失败待处理</h2>
+          <a nz-button nzType="link" routerLink="/ops/notifications">通知中心</a>
+        </div>
+        <div class="issue-list">
+          @for (item of failedRuns; track item.guid) {
+            <a class="issue-row" [routerLink]="['/sync/runs', item.guid]">
+              <strong>{{ item.taskName || item.guid }}</strong>
+              <span>同步失败 · {{ formatTime(item.startTime) }}</span>
+            </a>
+          }
+          @for (item of failedBackups; track item.guid) {
+            <a class="issue-row" routerLink="/backups/history">
+              <strong>{{ item.dataSourceName || item.guid }}</strong>
+              <span>备份失败 · {{ item.currentTable || item.database || '-' }}</span>
+            </a>
+          }
+          @if (failedRuns.length + failedBackups.length === 0) {
+            <div class="empty-state compact">暂无失败记录。</div>
+          }
+        </div>
+      </nz-card>
+
+      <nz-card class="monitor-card" [nzBordered]="false">
+        <div class="card-heading">
+          <h2>连接异常</h2>
+          <a nz-button nzType="link" routerLink="/datasources/health">查看健康</a>
+        </div>
+        <div class="issue-list">
+          @for (item of unhealthySources; track item.guid) {
+            <a class="issue-row" [routerLink]="['/datasources/edit', item.guid]">
+              <strong>{{ item.name }}</strong>
+              <span>{{ item.host }}:{{ item.port }} · {{ item.connectionError || '连接失败' }}</span>
+            </a>
+          } @empty {
+            <div class="empty-state compact">连接状态正常。</div>
+          }
+        </div>
+      </nz-card>
+    </div>
+  </div>
+</section>

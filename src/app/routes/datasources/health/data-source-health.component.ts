@@ -48,9 +48,9 @@ export class DataSourceHealthComponent implements OnInit {
   protected testingGuid = '';
   protected readonly columns: Array<STColumn<DataSource>> = [
     { title: '数据源', index: 'name', render: 'nameRender', width: 220 },
-    { title: '连接地址', index: 'host', render: 'endpointRender', width: 220 },
+    { title: '连接地址', index: 'host', render: 'endpointRender', width: 260 },
     { title: '健康状态', index: 'connectionStatus', render: 'healthRender', width: 170 },
-    { title: '最近检查', index: 'connectionCheckedAt', render: 'checkedRender', width: 150 },
+    { title: '最近检查', index: 'connectionCheckedAt', render: 'checkedRender', width: 180 },
     { title: '异常信息', index: 'connectionError', render: 'errorRender' },
     { title: '操作', render: 'actionsRender', width: 160 },
   ];

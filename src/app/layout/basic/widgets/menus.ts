@@ -83,8 +83,14 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
           </li>
           <li nz-submenu nzTitle="运维中心" nzIcon="bell">
             <ul>
+              <li nz-menu-item nzMatchRouter routerLink="/ops/monitor">
+                <span>运行监控</span>
+              </li>
               <li nz-menu-item nzMatchRouter routerLink="/ops/notifications">
                 <span>通知中心</span>
+              </li>
+              <li nz-menu-item nzMatchRouter routerLink="/ops/settings">
+                <span>同步设置</span>
               </li>
             </ul>
           </li>
