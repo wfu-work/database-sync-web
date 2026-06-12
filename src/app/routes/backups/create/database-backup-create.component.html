@@ -91,6 +91,56 @@
           </sv>
         </sv-container>
 
+        <section class="advanced-panel">
+          <div class="advanced-heading">
+            <div>
+              <h3>提升成功率配置</h3>
+              <span>当前按 {{ selectedTypeLabel() }} 推荐连接参数，仅本次备份生效。</span>
+            </div>
+            <button nz-button nzSize="small" type="button" (click)="applyRecommendedParams()">
+              填入推荐参数
+            </button>
+          </div>
+
+          <sv-container class="form-sv" layout="vertical" [col]="2" [gutter]="16" noColon>
+            <sv label="连接参数 JSON" [col]="1">
+              <textarea
+                nz-input
+                formControlName="connectionParams"
+                rows="5"
+                spellcheck="false"
+                [class.field-invalid]="paramsError"
+                placeholder='例如：{"timeout":"5m"}'
+              ></textarea>
+              @if (paramsError) {
+                <span class="field-error">{{ paramsError }}</span>
+              }
+              <span class="field-help">
+                会与数据源连接参数合并后用于本次备份。TDengine 可设置 timeout；MySQL 可设置 timeout、readTimeout、writeTimeout 等 DSN 参数。
+              </span>
+            </sv>
+
+            <sv label="失败重试次数" col="2">
+              <nz-input-number formControlName="retryTimes" [nzMin]="0" [nzMax]="10" [nzPrecision]="0" />
+              <span class="field-help">单批读取失败后自动重试，适合网络瞬断或 REST 连接偶发 EOF。</span>
+            </sv>
+
+            <sv label="重试间隔 ms" col="2">
+              <nz-input-number formControlName="retryIntervalMs" [nzMin]="0" [nzPrecision]="0" />
+              <span class="field-help">两次批次重试之间等待的毫秒数，默认 1500。</span>
+            </sv>
+
+            <sv label="推荐批次" col="1">
+              <div class="hint-card">
+                <strong>{{ selectedTypeLabel() }}</strong>
+                <span>
+                  {{ selectedTypeLabel() === 'TDengine' ? '大表建议 200-1000；先调大 timeout，再按压力调整批次。' : 'MySQL 建议保留 500-2000；慢表优先调 readTimeout/writeTimeout。' }}
+                </span>
+              </div>
+            </sv>
+          </sv-container>
+        </section>
+
         <div class="backup-summary">
           <div>
             <span>范围</span>
@@ -148,11 +198,12 @@
         </div>
 
         <div class="context-group">
-          <h3>建议检查</h3>
+          <h3>成功率建议</h3>
           <ul class="context-list">
             <li><i nz-icon nzType="check-circle"></i><span>确认账号有读取表结构和数据的权限。</span></li>
-            <li><i nz-icon nzType="check-circle"></i><span>大表建议避开业务高峰期执行。</span></li>
-            <li><i nz-icon nzType="check-circle"></i><span>关键操作前填写备注，方便后续追溯。</span></li>
+            <li><i nz-icon nzType="check-circle"></i><span>TDengine 大表优先设置 timeout，例如 5m。</span></li>
+            <li><i nz-icon nzType="check-circle"></i><span>MySQL 慢查询建议设置 readTimeout 和 writeTimeout。</span></li>
+            <li><i nz-icon nzType="check-circle"></i><span>遇到偶发 EOF 或连接重置，可保留 2-3 次批次重试。</span></li>
           </ul>
         </div>
       </section>

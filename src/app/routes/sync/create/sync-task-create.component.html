@@ -45,28 +45,43 @@
 
           <sv label="源表 *">
             <span class="field-action">
-              <input
-                nz-input
+              <nz-select
                 formControlName="sourceTable"
-                list="create-source-table-options"
-                placeholder="sensor_data"
-                (change)="onSourceTableChange(form.controls.sourceTable.value)"
-              />
+                nzShowSearch
+                nzPlaceHolder="选择源表"
+                [nzLoading]="sourceTableLoading"
+                [nzDisabled]="!form.controls.sourceGuid.value"
+                (ngModelChange)="onSourceTableChange($event)"
+              >
+                @for (table of sourceTables; track table.name) {
+                  <nz-option
+                    [nzValue]="table.name"
+                    [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+                  />
+                }
+              </nz-select>
               <button
                 nz-button
                 type="button"
+                nz-tooltip
+                nzTooltipTitle="刷新源表"
                 [nzLoading]="sourceTableLoading"
                 [disabled]="!form.controls.sourceGuid.value"
                 (click)="refreshSourceTables()"
               >
                 <i nz-icon nzType="reload"></i>
               </button>
+              <button
+                nz-button
+                type="button"
+                nz-tooltip
+                nzTooltipTitle="查看源字段"
+                [disabled]="!form.controls.sourceTable.value"
+                (click)="openColumnDrawer('source')"
+              >
+                <i nz-icon nzType="profile"></i>
+              </button>
             </span>
-            <datalist id="create-source-table-options">
-              @for (table of sourceTables; track table.name) {
-                <option [value]="table.name">{{ table.comment || table.type }}</option>
-              }
-            </datalist>
             <span class="metadata-line" [class.loading]="sourceColumnLoading">
               源字段：{{ columnSummary(sourceColumns) }}
             </span>
@@ -74,28 +89,43 @@
 
           <sv label="目标表 *">
             <span class="field-action">
-              <input
-                nz-input
+              <nz-select
                 formControlName="targetTable"
-                list="create-target-table-options"
-                placeholder="sensor_data"
-                (change)="onTargetTableChange(form.controls.targetTable.value)"
-              />
+                nzShowSearch
+                nzPlaceHolder="选择目标表"
+                [nzLoading]="targetTableLoading"
+                [nzDisabled]="!form.controls.targetGuid.value"
+                (ngModelChange)="onTargetTableChange($event)"
+              >
+                @for (table of targetTables; track table.name) {
+                  <nz-option
+                    [nzValue]="table.name"
+                    [nzLabel]="table.comment ? table.name + ' · ' + table.comment : table.name"
+                  />
+                }
+              </nz-select>
               <button
                 nz-button
                 type="button"
+                nz-tooltip
+                nzTooltipTitle="刷新目标表"
                 [nzLoading]="targetTableLoading"
                 [disabled]="!form.controls.targetGuid.value"
                 (click)="refreshTargetTables()"
               >
                 <i nz-icon nzType="reload"></i>
               </button>
+              <button
+                nz-button
+                type="button"
+                nz-tooltip
+                nzTooltipTitle="查看目标字段"
+                [disabled]="!form.controls.targetTable.value"
+                (click)="openColumnDrawer('target')"
+              >
+                <i nz-icon nzType="profile"></i>
+              </button>
             </span>
-            <datalist id="create-target-table-options">
-              @for (table of targetTables; track table.name) {
-                <option [value]="table.name">{{ table.comment || table.type }}</option>
-              }
-            </datalist>
             <span class="metadata-line" [class.loading]="targetColumnLoading">
               目标字段：{{ columnSummary(targetColumns) }}
             </span>
@@ -357,4 +387,46 @@
       </section>
     </aside>
   </div>
+
+  <nz-drawer
+    [nzVisible]="columnDrawerVisible"
+    [nzWidth]="640"
+    [nzTitle]="drawerTitle()"
+    (nzOnClose)="closeColumnDrawer()"
+  >
+    <ng-container *nzDrawerContent>
+      <nz-spin [nzSpinning]="drawerLoading()">
+        <div class="column-drawer">
+          <div class="drawer-heading">
+            <h3>字段结构</h3>
+            <span>{{ drawerColumns().length }} 个字段</span>
+          </div>
+
+          @if (drawerColumns().length > 0) {
+            <div class="schema-list">
+              @for (column of drawerColumns(); track column.name) {
+                <div class="schema-row">
+                  <div>
+                    <strong>{{ column.name }}</strong>
+                    @if (column.comment) {
+                      <span>{{ column.comment }}</span>
+                    }
+                  </div>
+                  <em>{{ column.databaseType }}</em>
+                  @if (column.primaryKey) {
+                    <code>PK</code>
+                  }
+                  @if (!column.nullable) {
+                    <code>NN</code>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">字段结构读取后会显示在这里。</div>
+          }
+        </div>
+      </nz-spin>
+    </ng-container>
+  </nz-drawer>
 </section>

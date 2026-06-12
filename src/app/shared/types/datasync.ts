@@ -194,6 +194,10 @@ export interface DatabaseBackup extends BaseEntity {
   dataSourceType: DataSourceType | string;
   database: string;
   tables: string;
+  connectionParams: string;
+  batchSize: number;
+  retryTimes: number;
+  retryIntervalMs: number;
   format: string;
   status: BackupStatus | string;
   totalTables: number;
@@ -218,6 +222,9 @@ export interface StartDatabaseBackupPayload {
   dataSourceGuid: string;
   tables?: string[];
   batchSize?: number;
+  connectionParams?: string;
+  retryTimes?: number;
+  retryIntervalMs?: number;
   remark?: string;
 }
 

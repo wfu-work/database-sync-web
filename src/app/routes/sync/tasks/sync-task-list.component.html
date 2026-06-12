@@ -20,33 +20,50 @@
 
   <div class="sync-task-layout" [class.sync-task-layout-single]="!editing">
     <nz-card class="list-card" [nzBordered]="false">
-      <div class="query-bar">
-        <nz-input-wrapper>
-          <nz-icon nzInputPrefix nzType="search" />
-          <input
-            nz-input
-            [(ngModel)]="q.keyword"
-            placeholder="搜索任务名、GUID、源表、目标表或备注"
-            (keydown.enter)="search()"
-          />
-        </nz-input-wrapper>
-        <nz-select [(ngModel)]="q.mode" nzPlaceHolder="模式" (ngModelChange)="search()">
-          <nz-option nzValue="" nzLabel="全部模式" />
-          <nz-option nzValue="full" nzLabel="全量" />
-          <nz-option nzValue="incremental" nzLabel="增量" />
-        </nz-select>
-        <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
-          <nz-option nzValue="" nzLabel="全部状态" />
-          <nz-option nzValue="1" nzLabel="启用" />
-          <nz-option nzValue="0" nzLabel="禁用" />
-        </nz-select>
-        <nz-select [(ngModel)]="q.scheduleOn" nzPlaceHolder="调度" (ngModelChange)="search()">
-          <nz-option nzValue="" nzLabel="全部调度" />
-          <nz-option nzValue="1" nzLabel="定时" />
-          <nz-option nzValue="0" nzLabel="手动" />
-        </nz-select>
-        <button nz-button nzType="primary" (click)="search()">搜索</button>
-        <button nz-button (click)="resetQuery()">重置</button>
+      <div class="filter-panel">
+        <div class="filter-heading">
+          <div>
+            <strong>筛选同步任务</strong>
+            <span>按任务名、源表、目标表、同步模式和调度方式快速定位。</span>
+          </div>
+          <span class="result-chip">共 {{ total || 0 }} 条</span>
+        </div>
+
+        <div class="query-bar">
+          <nz-input-wrapper class="search-input">
+            <nz-icon nzInputPrefix nzType="search" />
+            <input
+              nz-input
+              [(ngModel)]="q.keyword"
+              placeholder="搜索任务名、GUID、源表、目标表或备注"
+              (keydown.enter)="search()"
+            />
+          </nz-input-wrapper>
+          <div class="filter-controls">
+            <nz-select [(ngModel)]="q.mode" nzPlaceHolder="模式" (ngModelChange)="search()">
+              <nz-option nzValue="" nzLabel="全部模式" />
+              <nz-option nzValue="full" nzLabel="全量" />
+              <nz-option nzValue="incremental" nzLabel="增量" />
+            </nz-select>
+            <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+              <nz-option nzValue="" nzLabel="全部状态" />
+              <nz-option nzValue="1" nzLabel="启用" />
+              <nz-option nzValue="0" nzLabel="禁用" />
+            </nz-select>
+            <nz-select [(ngModel)]="q.scheduleOn" nzPlaceHolder="调度" (ngModelChange)="search()">
+              <nz-option nzValue="" nzLabel="全部调度" />
+              <nz-option nzValue="1" nzLabel="定时" />
+              <nz-option nzValue="0" nzLabel="手动" />
+            </nz-select>
+          </div>
+          <div class="filter-actions">
+            <button nz-button nzType="primary" (click)="search()">
+              <i nz-icon nzType="search"></i>
+              搜索
+            </button>
+            <button nz-button (click)="resetQuery()">重置</button>
+          </div>
+        </div>
       </div>
 
       <st

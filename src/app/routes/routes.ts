@@ -30,6 +30,11 @@ export const routes: Routes = [
         loadChildren: () => import('./backups/routes').then((m) => m.routes),
         data: { title: '数据库备份' },
       },
+      {
+        path: 'ops',
+        loadChildren: () => import('./ops/routes').then((m) => m.routes),
+        data: { title: '运维中心' },
+      },
     ],
   },
   { path: '', loadChildren: () => import('./passport/routes').then((m) => m.routes) },

@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { SyncTaskCreateComponent } from './create/sync-task-create.component';
 import { SyncRunDetailComponent } from './run-detail/sync-run-detail.component';
 import { SyncRunListComponent } from './runs/sync-run-list.component';
+import { SyncScheduleListComponent } from './schedules/sync-schedule-list.component';
 import { SyncTaskListComponent } from './tasks/sync-task-list.component';
 
 export const routes: Routes = [
@@ -21,6 +22,11 @@ export const routes: Routes = [
     path: 'runs/list',
     component: SyncRunListComponent,
     data: { title: '同步历史' },
+  },
+  {
+    path: 'schedules',
+    component: SyncScheduleListComponent,
+    data: { title: '任务调度' },
   },
   {
     path: 'runs/:guid',

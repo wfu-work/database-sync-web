@@ -9,7 +9,6 @@
 }
 
 .page-heading,
-.query-bar,
 .form-title,
 .form-actions {
   display: flex;
@@ -19,8 +18,7 @@
   min-width: 0;
 }
 
-.page-actions,
-.query-bar {
+.page-actions {
   flex-wrap: wrap;
 }
 
@@ -63,17 +61,80 @@
   width: 100%;
 }
 
+.filter-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.filter-heading {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.filter-heading div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.filter-heading strong {
+  font-size: 15px;
+  color: #1f2a3d;
+}
+
+.filter-heading span {
+  font-size: 12px;
+  color: #6b778c;
+}
+
+.result-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--nm-primary) !important;
+  background: rgb(var(--nm-primary-rgb) / 10%);
+}
+
 .query-bar {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
   justify-content: flex-start;
-  margin-bottom: 16px;
+  min-width: 0;
 }
 
-.query-bar nz-input-wrapper {
-  width: min(460px, 100%);
+.search-input {
+  width: 100%;
 }
 
-.query-bar nz-select {
+.filter-controls,
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.filter-controls nz-select {
   width: 132px;
+}
+
+.filter-actions {
+  justify-content: flex-end;
+}
+
+.filter-actions button {
+  min-width: 86px;
 }
 
 .form-title {
@@ -328,6 +389,14 @@ textarea[formControlName='fieldsText'] {
 }
 
 @media (max-width: 1399px) {
+  .query-bar {
+    grid-template-columns: minmax(320px, 1fr) auto;
+  }
+
+  .filter-actions {
+    grid-column: 1 / -1;
+  }
+
   .sync-task-layout {
     grid-template-columns: 1fr;
   }
@@ -338,6 +407,28 @@ textarea[formControlName='fieldsText'] {
   .form-title {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .filter-panel {
+    padding: 12px;
+  }
+
+  .filter-heading {
+    flex-direction: column;
+  }
+
+  .query-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .filter-controls,
+  .filter-actions,
+  .filter-controls nz-select {
+    width: 100%;
+  }
+
+  .filter-actions button {
+    flex: 1;
   }
 
   .form-grid,

@@ -44,6 +44,9 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
               <li nz-menu-item nzMatchRouter routerLink="/datasources/list">
                 <span>数据源列表</span>
               </li>
+              <li nz-menu-item nzMatchRouter routerLink="/datasources/health">
+                <span>连接健康</span>
+              </li>
               <li nz-menu-item nzMatchRouter routerLink="/datasources/create">
                 <span>新建数据源</span>
               </li>
@@ -53,6 +56,9 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/sync/tasks/list">
                 <span>同步任务</span>
+              </li>
+              <li nz-menu-item nzMatchRouter routerLink="/sync/schedules">
+                <span>任务调度</span>
               </li>
               <li nz-menu-item nzMatchRouter routerLink="/sync/tasks/create">
                 <span>新建任务</span>
@@ -67,8 +73,18 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
               <li nz-menu-item nzMatchRouter routerLink="/backups/history">
                 <span>备份历史</span>
               </li>
+              <li nz-menu-item nzMatchRouter routerLink="/backups/policies">
+                <span>备份策略</span>
+              </li>
               <li nz-menu-item nzMatchRouter routerLink="/backups/create">
                 <span>新建备份</span>
+              </li>
+            </ul>
+          </li>
+          <li nz-submenu nzTitle="运维中心" nzIcon="bell">
+            <ul>
+              <li nz-menu-item nzMatchRouter routerLink="/ops/notifications">
+                <span>通知中心</span>
               </li>
             </ul>
           </li>

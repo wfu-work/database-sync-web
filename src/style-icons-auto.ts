@@ -75,10 +75,16 @@ import {
   TransactionOutline,
   CloudSyncOutline,
   DeploymentUnitOutline,
+  DownloadOutline,
+  WarningOutline,
+  ProfileOutline,
 } from '@ant-design/icons-angular/icons';
 
 export const ICONS_AUTO = [
   HomeOutline,
+  DownloadOutline,
+  ProfileOutline,
+  WarningOutline,
   AppleOutline,
   DeploymentUnitOutline,
   CloudSyncOutline,

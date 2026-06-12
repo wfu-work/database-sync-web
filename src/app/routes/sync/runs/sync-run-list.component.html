@@ -10,37 +10,54 @@
   </div>
 
   <nz-card class="list-card" [nzBordered]="false">
-    <div class="query-bar">
-      <nz-input-wrapper>
-        <nz-icon nzInputPrefix nzType="search" />
-        <input
-          nz-input
-          [(ngModel)]="q.keyword"
-          placeholder="搜索任务名、运行 GUID 或错误信息"
-          (keydown.enter)="search()"
-        />
-      </nz-input-wrapper>
-      <nz-select
-        [(ngModel)]="q.taskGuid"
-        nzPlaceHolder="任务"
-        nzShowSearch
-        (ngModelChange)="search()"
-      >
-        <nz-option nzValue="" nzLabel="全部任务" />
-        @for (task of tasks; track task.guid) {
-          <nz-option [nzValue]="task.guid" [nzLabel]="task.name" />
-        }
-      </nz-select>
-      <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
-        <nz-option nzValue="" nzLabel="全部状态" />
-        <nz-option nzValue="pending" nzLabel="等待" />
-        <nz-option nzValue="running" nzLabel="运行中" />
-        <nz-option nzValue="success" nzLabel="成功" />
-        <nz-option nzValue="failed" nzLabel="失败" />
-        <nz-option nzValue="canceled" nzLabel="取消" />
-      </nz-select>
-      <button nz-button nzType="primary" (click)="search()">搜索</button>
-      <button nz-button (click)="resetQuery()">重置</button>
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>筛选同步历史</strong>
+          <span>按任务、运行标识、状态和错误信息查看执行记录。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索任务名、运行 GUID 或错误信息"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <div class="filter-controls">
+          <nz-select
+            [(ngModel)]="q.taskGuid"
+            nzPlaceHolder="任务"
+            nzShowSearch
+            (ngModelChange)="search()"
+          >
+            <nz-option nzValue="" nzLabel="全部任务" />
+            @for (task of tasks; track task.guid) {
+              <nz-option [nzValue]="task.guid" [nzLabel]="task.name" />
+            }
+          </nz-select>
+          <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部状态" />
+            <nz-option nzValue="pending" nzLabel="等待" />
+            <nz-option nzValue="running" nzLabel="运行中" />
+            <nz-option nzValue="success" nzLabel="成功" />
+            <nz-option nzValue="failed" nzLabel="失败" />
+            <nz-option nzValue="canceled" nzLabel="取消" />
+          </nz-select>
+        </div>
+        <div class="filter-actions">
+          <button nz-button nzType="primary" (click)="search()">
+            <i nz-icon nzType="search"></i>
+            搜索
+          </button>
+          <button nz-button (click)="resetQuery()">重置</button>
+        </div>
+      </div>
     </div>
 
     <st

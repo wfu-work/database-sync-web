@@ -1,0 +1,130 @@
+<section class="health-page">
+  <div class="page-heading">
+    <title-label title="连接健康" description="集中查看数据源可用性，快速发现会影响同步和备份的连接问题。" />
+    <div class="page-actions">
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+      <button nz-button nzType="primary" routerLink="/datasources/create">
+        <i nz-icon nzType="plus"></i>
+        新建数据源
+      </button>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    @for (item of metrics(); track item.label) {
+      <div class="metric-card" [class]="'metric-' + item.tone">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.hint }}</em>
+      </div>
+    }
+  </div>
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>筛选连接</strong>
+          <span>按名称、主机、数据库类型和启用状态定位异常数据源。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索名称、GUID、主机、数据库或备注"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <div class="filter-controls">
+          <nz-select [(ngModel)]="q.type" nzPlaceHolder="类型" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部类型" />
+            <nz-option nzValue="mysql" nzLabel="MySQL" />
+            <nz-option nzValue="tdengine" nzLabel="TDengine" />
+          </nz-select>
+          <nz-select [(ngModel)]="q.status" nzPlaceHolder="启用状态" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部状态" />
+            <nz-option nzValue="1" nzLabel="启用" />
+            <nz-option nzValue="0" nzLabel="禁用" />
+          </nz-select>
+        </div>
+        <div class="filter-actions">
+          <button nz-button nzType="primary" (click)="search()">
+            <i nz-icon nzType="search"></i>
+            搜索
+          </button>
+          <button nz-button (click)="resetQuery()">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="nameRender" let-item>
+        <div class="strong">{{ item.name }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+      </ng-template>
+
+      <ng-template st-row="endpointRender" let-item>
+        <div class="connection-main">
+          <span class="pill">{{ sourceTypeLabel(item.type) }}</span>
+          <span class="mono truncate-text">{{ item.host }}:{{ item.port }}</span>
+        </div>
+        <div class="muted truncate-text">{{ item.database || '-' }}</div>
+      </ng-template>
+
+      <ng-template st-row="healthRender" let-item>
+        <span class="status" [class]="healthClass(item.connectionStatus)">
+          {{ healthLabel(item.connectionStatus) }}
+        </span>
+      </ng-template>
+
+      <ng-template st-row="checkedRender" let-item>
+        {{ formatTime(item.connectionCheckedAt) }}
+      </ng-template>
+
+      <ng-template st-row="errorRender" let-item>
+        @if (item.connectionError) {
+          <ellipsis class="error-text" [lines]="1" [tooltip]="item.connectionError">
+            {{ item.connectionError }}
+          </ellipsis>
+        } @else {
+          <span class="muted">-</span>
+        }
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button
+            nz-button
+            nzType="link"
+            [nzLoading]="testingGuid === item.guid"
+            (click)="test(item)"
+          >
+            <i nz-icon nzType="link"></i>
+            测试
+          </button>
+          <button nz-button nzType="link" (click)="edit(item)">
+            <i nz-icon nzType="edit"></i>
+            编辑
+          </button>
+        </div>
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

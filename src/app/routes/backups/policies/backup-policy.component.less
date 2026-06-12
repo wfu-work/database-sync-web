@@ -1,0 +1,155 @@
+:host {
+  display: block;
+}
+
+.policy-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.page-heading,
+.page-actions,
+.card-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.page-actions {
+  flex-wrap: wrap;
+}
+
+.policy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.recommend-card,
+.policy-card {
+  border: 1px solid rgb(var(--nm-primary-rgb) / 10%);
+  border-radius: 8px;
+}
+
+.card-heading {
+  margin-bottom: 16px;
+}
+
+.card-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2a3d;
+}
+
+.card-heading span {
+  font-size: 12px;
+  color: #6b778c;
+}
+
+.recommend-list,
+.side-stack,
+.playbook-list {
+  display: grid;
+  gap: 14px;
+}
+
+.recommend-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 0.9fr) minmax(0, 1.4fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.recommend-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.recommend-row strong {
+  color: #1f2a3d;
+}
+
+.recommend-row span,
+.recommend-row p {
+  margin: 0;
+  font-size: 12px;
+  color: #667085;
+}
+
+.recommend-row code,
+.emphasis-card code {
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: #1f2a3d;
+  background: #f4f7fb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.recommend-primary {
+  border-color: rgb(var(--nm-primary-rgb) / 18%);
+  background: rgb(var(--nm-primary-rgb) / 4%);
+}
+
+.recommend-warning {
+  border-color: #ffe1a6;
+  background: #fffaf0;
+}
+
+.recommend-success {
+  border-color: #c7f0d8;
+  background: #f3fbf6;
+}
+
+.playbook {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #edf1f7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.playbook strong {
+  color: #1f2a3d;
+}
+
+.playbook span {
+  position: relative;
+  padding-left: 16px;
+  font-size: 13px;
+  color: #667085;
+}
+
+.playbook span::before {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nm-primary);
+  content: '';
+}
+
+.emphasis-card p {
+  margin: 0;
+  color: #4b5565;
+  line-height: 1.8;
+}
+
+@media (max-width: 1100px) {
+  .policy-layout,
+  .recommend-row {
+    grid-template-columns: 1fr;
+  }
+}

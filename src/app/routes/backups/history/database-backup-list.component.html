@@ -17,36 +17,55 @@
   </div>
 
   <nz-card class="list-card" [nzBordered]="false">
-    <div class="query-bar">
-      <nz-input-wrapper>
-        <nz-icon nzInputPrefix nzType="search" />
-        <input
-          nz-input
-          [(ngModel)]="q.keyword"
-          placeholder="搜索备份 GUID、数据源、文件名或备注"
-          (keydown.enter)="search()"
-        />
-      </nz-input-wrapper>
-      <nz-select
-        [(ngModel)]="q.dataSourceGuid"
-        nzPlaceHolder="数据源"
-        nzShowSearch
-        (ngModelChange)="search()"
-      >
-        <nz-option nzValue="" nzLabel="全部数据源" />
-        @for (item of dataSources; track item.guid) {
-          <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
-        }
-      </nz-select>
-      <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
-        <nz-option nzValue="" nzLabel="全部状态" />
-        <nz-option nzValue="pending" nzLabel="等待" />
-        <nz-option nzValue="running" nzLabel="备份中" />
-        <nz-option nzValue="success" nzLabel="成功" />
-        <nz-option nzValue="failed" nzLabel="失败" />
-      </nz-select>
-      <button nz-button nzType="primary" (click)="search()">搜索</button>
-      <button nz-button (click)="resetQuery()">重置</button>
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>筛选备份</strong>
+          <span>按记录标识、数据源和状态快速定位备份文件。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索备份 GUID、数据源、文件名或备注"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+
+        <div class="filter-controls">
+          <nz-select
+            [(ngModel)]="q.dataSourceGuid"
+            nzPlaceHolder="数据源"
+            nzShowSearch
+            (ngModelChange)="search()"
+          >
+            <nz-option nzValue="" nzLabel="全部数据源" />
+            @for (item of dataSources; track item.guid) {
+              <nz-option [nzValue]="item.guid" [nzLabel]="item.name" />
+            }
+          </nz-select>
+          <nz-select [(ngModel)]="q.status" nzPlaceHolder="状态" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部状态" />
+            <nz-option nzValue="pending" nzLabel="等待" />
+            <nz-option nzValue="running" nzLabel="备份中" />
+            <nz-option nzValue="success" nzLabel="成功" />
+            <nz-option nzValue="failed" nzLabel="失败" />
+          </nz-select>
+        </div>
+
+        <div class="filter-actions">
+          <button nz-button nzType="primary" (click)="search()">
+            <i nz-icon nzType="search"></i>
+            搜索
+          </button>
+          <button nz-button (click)="resetQuery()">重置</button>
+        </div>
+      </div>
     </div>
 
     <st
@@ -60,10 +79,18 @@
       (change)="tableChange($event)"
     >
       <ng-template st-row="backupRender" let-item>
-        <div class="strong">{{ item.fileName || item.guid }}</div>
-        <div class="muted mono">{{ item.guid }}</div>
+        <div class="backup-record-cell">
+          <ellipsis class="strong block-ellipsis" [tooltip]="true" [length]="34">
+            {{ item.fileName || item.guid }}
+          </ellipsis>
+          <ellipsis class="muted mono block-ellipsis" [tooltip]="true" [length]="38">
+            {{ item.guid }}
+          </ellipsis>
+        </div>
         @if (item.remark) {
-          <div class="muted ellipsis">{{ item.remark }}</div>
+          <ellipsis class="muted block-ellipsis" [tooltip]="true" [length]="42">
+            {{ item.remark }}
+          </ellipsis>
         }
       </ng-template>
 
@@ -255,6 +282,18 @@
             </div>
           </div>
 
+          @if (selectedBackup.lastError) {
+            <section class="failure-panel">
+              <div class="failure-title">
+                <i nz-icon nzType="warning"></i>
+                <span>失败分析</span>
+              </div>
+              <p>{{ failureSummary(selectedBackup) }}</p>
+              <div class="failure-advice">{{ failureAdvice(selectedBackup) }}</div>
+              <div class="failure-raw mono">{{ selectedBackup.lastError }}</div>
+            </section>
+          }
+
           <div class="detail-grid">
             <div>
               <span>数据源</span>
@@ -352,12 +391,6 @@
             </section>
           }
 
-          @if (selectedBackup.lastError) {
-            <section class="detail-section">
-              <h3>错误信息</h3>
-              <div class="text-box error-box">{{ selectedBackup.lastError }}</div>
-            </section>
-          }
         } @else {
           <div class="empty-state">正在读取备份详情。</div>
         }

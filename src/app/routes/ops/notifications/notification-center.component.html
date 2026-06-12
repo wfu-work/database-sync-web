@@ -1,0 +1,122 @@
+<section class="notification-page">
+  <div class="page-heading">
+    <title-label title="通知中心" description="集中查看同步、备份和数据源健康产生的失败、告警与运行提示。" />
+    <div class="page-actions">
+      <button nz-button [nzLoading]="markingAll" (click)="markAllRead()">
+        <i nz-icon nzType="check"></i>
+        全部已读
+      </button>
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>筛选通知</strong>
+          <span>按通知内容、级别、来源和已读状态定位需要处理的问题。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索标题、内容、来源名称或 GUID"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <div class="filter-controls">
+          <nz-select [(ngModel)]="q.level" nzPlaceHolder="级别" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部级别" />
+            <nz-option nzValue="info" nzLabel="信息" />
+            <nz-option nzValue="warning" nzLabel="告警" />
+            <nz-option nzValue="error" nzLabel="错误" />
+          </nz-select>
+          <nz-select [(ngModel)]="q.sourceType" nzPlaceHolder="来源" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部来源" />
+            <nz-option nzValue="backup" nzLabel="数据备份" />
+            <nz-option nzValue="sync" nzLabel="同步任务" />
+            <nz-option nzValue="datasource" nzLabel="数据源" />
+          </nz-select>
+          <nz-select [(ngModel)]="q.read" nzPlaceHolder="已读状态" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部状态" />
+            <nz-option nzValue="0" nzLabel="未读" />
+            <nz-option nzValue="1" nzLabel="已读" />
+          </nz-select>
+        </div>
+        <div class="filter-actions">
+          <button nz-button nzType="primary" (click)="search()">
+            <i nz-icon nzType="search"></i>
+            搜索
+          </button>
+          <button nz-button (click)="resetQuery()">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: false, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="titleRender" let-item>
+        <div class="notice-title" [class.notice-unread]="item.read !== 1">
+          <strong>{{ item.title }}</strong>
+          @if (item.read !== 1) {
+            <nz-badge nzStatus="processing" />
+          }
+        </div>
+        <ellipsis class="notice-content" [lines]="1" [tooltip]="item.content">
+          {{ item.content || '-' }}
+        </ellipsis>
+      </ng-template>
+
+      <ng-template st-row="levelRender" let-item>
+        <span class="level" [class.level-warning]="item.level === 'warning'" [class.level-error]="item.level === 'error'">
+          {{ levelLabel(item.level) }}
+        </span>
+      </ng-template>
+
+      <ng-template st-row="sourceRender" let-item>
+        <div>{{ sourceLabel(item.sourceType) }}</div>
+        <div class="muted truncate-text">{{ item.sourceName || item.sourceGuid || '-' }}</div>
+      </ng-template>
+
+      <ng-template st-row="readRender" let-item>
+        <span class="read-status" [class.read-status-unread]="item.read !== 1">
+          {{ item.read === 1 ? '已读' : '未读' }}
+        </span>
+      </ng-template>
+
+      <ng-template st-row="timeRender" let-item>
+        {{ formatTime(item.eventTime || item.createTime) }}
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <button
+          nz-button
+          nzType="link"
+          [disabled]="item.read === 1"
+          [nzLoading]="markingGuid === item.guid"
+          (click)="markRead(item)"
+        >
+          <i nz-icon nzType="check"></i>
+          已读
+        </button>
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

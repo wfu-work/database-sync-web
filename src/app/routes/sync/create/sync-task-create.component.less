@@ -58,6 +58,25 @@
   display: block;
 }
 
+.ant-btn:not(.ant-btn-link) + .ant-btn,
+.ant-btn:not(.ant-btn-link) + nz-popconfirm,
+nz-popconfirm + .ant-btn,
+nz-popconfirm + nz-popconfirm,
+.ant-btn:not(.ant-btn-link) + nz-space-compact,
+nz-space-compact + .ant-btn,
+.ant-btn:not(.ant-btn-link) + nz-dropdown,
+nz-dropdown + .ant-btn,
+nz-popconfirm + nz-space-compact,
+nz-space-compact + nz-popconfirm {
+  margin-left: 0;
+}
+
+:host ::ng-deep .form-sv .sv__item,
+:host ::ng-deep .form-sv .sv__container,
+:host ::ng-deep .form-sv .sv__detail {
+  min-width: 0;
+}
+
 :host ::ng-deep .form-sv .sv__detail > span {
   display: block;
   width: 100%;
@@ -85,14 +104,30 @@
 
 .field-action {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 36px;
+  grid-template-columns: minmax(0, 1fr) 36px 36px;
   gap: 8px;
   align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .field-action button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
+  min-width: 36px;
+  height: 36px;
   padding: 0;
+}
+
+.field-action button i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .metadata-line {
@@ -310,6 +345,100 @@ textarea[formControlName='fieldsText'] {
 .mode-notes span {
   color: #5d687a;
   line-height: 1.65;
+}
+
+.column-drawer {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 4px 0 16px;
+}
+
+.drawer-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.drawer-heading h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1d2b3f;
+}
+
+.drawer-heading span {
+  color: #6b778c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.schema-list {
+  display: grid;
+  gap: 8px;
+}
+
+.schema-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.schema-row > div {
+  min-width: 0;
+}
+
+.schema-row strong,
+.schema-row span {
+  display: block;
+}
+
+.schema-row strong {
+  overflow: hidden;
+  color: #1d2b3f;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schema-row span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.schema-row em {
+  color: #334155;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.schema-row code {
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: var(--nm-primary);
+  font-size: 12px;
+  font-weight: 800;
+  background: rgb(var(--nm-primary-rgb) / 10%);
+}
+
+.empty-state {
+  padding: 24px 12px;
+  border-radius: 8px;
+  color: #6b778c;
+  text-align: center;
+  background: #f7f9fc;
 }
 
 @media (max-width: 1199px) {

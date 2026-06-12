@@ -58,7 +58,7 @@ export class DataSourceListComponent implements OnInit {
     { title: '连接状态', index: 'connectionStatus', render: 'connectionStatusRender', width: 90 },
     { title: '状态', index: 'status', render: 'statusRender', width: 65 },
     { title: '更新时间', index: 'updateTime', render: 'timeRender', width: 140 },
-    { title: '操作', render: 'actionsRender', width: 176 },
+    { title: '操作', render: 'actionsRender', width: 140 },
   ];
 
   protected readonly previewForm = this.fb.group({
@@ -183,6 +183,9 @@ export class DataSourceListComponent implements OnInit {
       .subscribe({
         next: (items) => {
           this.schemaColumns = items ?? [];
+          if (this.previewRows.length > 0) {
+            this.previewColumns = this.previewColumnNames(this.previewRows);
+          }
         },
         error: (err) => this.message.error(err?.msg || err?.message || '获取字段失败'),
       });
@@ -214,7 +217,7 @@ export class DataSourceListComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.previewRows = res.rows ?? [];
-          this.previewColumns = this.rowKeys(this.previewRows);
+          this.previewColumns = this.previewColumnNames(this.previewRows);
           if (this.previewRows.length === 0) this.message.info('当前条件下没有预览数据');
         },
         error: (err) => this.message.error(err?.msg || err?.message || '预览数据失败'),
@@ -281,10 +284,18 @@ export class DataSourceListComponent implements OnInit {
     return String(value);
   }
 
-  private rowKeys(rows: MapperRow[]): string[] {
+  private previewColumnNames(rows: MapperRow[]): string[] {
+    const schemaNames = this.schemaColumns
+      .map((column) => column.name?.trim())
+      .filter((name): name is string => !!name);
+    const schemaSet = new Set(schemaNames.map((name) => name.toLowerCase()));
     const keys = new Set<string>();
-    rows.forEach((row) => Object.keys(row).forEach((key) => keys.add(key)));
-    return Array.from(keys);
+    rows.forEach((row) =>
+      Object.keys(row).forEach((key) => {
+        if (!schemaSet.has(key.toLowerCase())) keys.add(key);
+      }),
+    );
+    return [...schemaNames, ...Array.from(keys)];
   }
 
   private normalizeType(type: string): DataSourceType {

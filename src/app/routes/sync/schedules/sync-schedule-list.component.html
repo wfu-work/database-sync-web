@@ -1,0 +1,130 @@
+<section class="schedule-page">
+  <div class="page-heading">
+    <title-label title="任务调度" description="查看已装载到调度器的定时任务，并在调整任务后手动重载调度。" />
+    <div class="page-actions">
+      <button nz-button [nzLoading]="reloading" (click)="reloadSchedules()">
+        <i nz-icon nzType="reload"></i>
+        重载调度
+      </button>
+      <button nz-button (click)="getData()">
+        <i nz-icon nzType="reload"></i>
+        刷新
+      </button>
+      <button nz-button nzType="primary" routerLink="/sync/tasks/create">
+        <i nz-icon nzType="plus"></i>
+        新建任务
+      </button>
+    </div>
+  </div>
+
+  <nz-alert
+    nzType="info"
+    nzShowIcon
+    nzMessage="只展示已启用定时调度的任务"
+    nzDescription="如果刚修改 Cron 或启停任务，建议点击重载调度，让后端调度器重新装载任务。"
+  />
+
+  <nz-card class="list-card" [nzBordered]="false">
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <div>
+          <strong>筛选调度任务</strong>
+          <span>按任务名、GUID、Cron 或源/目标表定位定时任务。</span>
+        </div>
+        <span class="result-chip">共 {{ total || 0 }} 条</span>
+      </div>
+
+      <div class="query-bar">
+        <nz-input-wrapper class="search-input">
+          <nz-icon nzInputPrefix nzType="search" />
+          <input
+            nz-input
+            [(ngModel)]="q.keyword"
+            placeholder="搜索任务名、GUID、Cron、源表或目标表"
+            (keydown.enter)="search()"
+          />
+        </nz-input-wrapper>
+        <div class="filter-controls">
+          <nz-select [(ngModel)]="q.status" nzPlaceHolder="任务状态" (ngModelChange)="search()">
+            <nz-option nzValue="" nzLabel="全部状态" />
+            <nz-option nzValue="1" nzLabel="启用" />
+            <nz-option nzValue="0" nzLabel="禁用" />
+          </nz-select>
+        </div>
+        <div class="filter-actions">
+          <button nz-button nzType="primary" (click)="search()">
+            <i nz-icon nzType="search"></i>
+            搜索
+          </button>
+          <button nz-button (click)="resetQuery()">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <st
+      [data]="data"
+      [columns]="columns"
+      [loading]="loading"
+      [pi]="q.page"
+      [ps]="q.size"
+      [total]="total"
+      [page]="{ front: true, showSize: true, pageSizes: [10, 20, 50], showQuickJumper: true }"
+      (change)="tableChange($event)"
+    >
+      <ng-template st-row="taskRender" let-item>
+        <div class="strong">{{ item.name }}</div>
+        <div class="muted mono">{{ item.guid }}</div>
+        @if (item.task) {
+          <div class="muted truncate-text">{{ item.task.sourceTable }} → {{ item.task.targetTable }}</div>
+        }
+      </ng-template>
+
+      <ng-template st-row="cronRender" let-item>
+        <span class="cron mono">{{ item.cronExpr || '-' }}</span>
+        <div class="muted">Entry #{{ item.entryId }}</div>
+      </ng-template>
+
+      <ng-template st-row="statusRender" let-item>
+        <span class="status" [class.status-off]="item.task?.status === 0">
+          {{ statusLabel(item.task) }}
+        </span>
+      </ng-template>
+
+      <ng-template st-row="lastRunRender" let-item>
+        <span
+          class="status"
+          [class.status-failed]="item.task?.lastRunStatus === 'failed'"
+          [class.status-running]="item.task?.lastRunStatus === 'running'"
+        >
+          {{ runStatusLabel(item.task?.lastRunStatus) }}
+        </span>
+        <div class="muted">{{ formatTime(item.task?.updateTime) }}</div>
+      </ng-template>
+
+      <ng-template st-row="actionsRender" let-item>
+        <div class="action-col">
+          <button
+            nz-button
+            nzType="link"
+            [nzLoading]="runningGuid === item.guid"
+            [disabled]="item.task?.status === 0 || item.task?.lastRunStatus === 'running'"
+            (click)="run(item)"
+          >
+            <i nz-icon nzType="play-circle"></i>
+            执行
+          </button>
+          @if (item.task?.lastRunGuid) {
+            <button nz-button nzType="link" [routerLink]="['/sync/runs', item.task?.lastRunGuid]">
+              <i nz-icon nzType="history"></i>
+              记录
+            </button>
+          }
+          <button nz-button nzType="link" routerLink="/sync/tasks/list">
+            <i nz-icon nzType="edit"></i>
+            维护
+          </button>
+        </div>
+      </ng-template>
+    </st>
+  </nz-card>
+</section>

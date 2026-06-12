@@ -58,6 +58,8 @@ export class SyncTaskCreateComponent implements OnInit {
   protected formError = '';
   protected fieldError = '';
   protected validationResult: ValidateSyncTaskResult | null = null;
+  protected columnDrawerVisible = false;
+  protected columnDrawerKind: 'source' | 'target' = 'source';
 
   protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(128)]],
@@ -155,6 +157,25 @@ export class SyncTaskCreateComponent implements OnInit {
     this.loadTables('target', this.form.controls.targetTable.value);
   }
 
+  protected openColumnDrawer(kind: 'source' | 'target'): void {
+    const table =
+      kind === 'source' ? this.form.controls.sourceTable.value : this.form.controls.targetTable.value;
+    if (!table?.trim()) {
+      this.message.warning(kind === 'source' ? '请先选择源表' : '请先选择目标表');
+      return;
+    }
+    this.columnDrawerKind = kind;
+    this.columnDrawerVisible = true;
+    const columns = kind === 'source' ? this.sourceColumns : this.targetColumns;
+    if (columns.length === 0) {
+      this.loadColumns(kind, table);
+    }
+  }
+
+  protected closeColumnDrawer(): void {
+    this.columnDrawerVisible = false;
+  }
+
   protected generateSameNameMapping(): void {
     if (this.sourceColumns.length === 0 || this.targetColumns.length === 0) {
       this.message.warning('请先选择源表和目标表，读取字段后再生成映射');
@@ -237,6 +258,25 @@ export class SyncTaskCreateComponent implements OnInit {
   protected columnSummary(columns: ColumnInfo[]): string {
     if (columns.length === 0) return '未读取';
     return columns.map((column) => column.name).join(', ');
+  }
+
+  protected drawerTitle(): string {
+    const prefix = this.columnDrawerKind === 'source' ? '源表字段' : '目标表字段';
+    const table =
+      this.columnDrawerKind === 'source'
+        ? this.form.controls.sourceTable.value
+        : this.form.controls.targetTable.value;
+    return table ? `${prefix} · ${table}` : prefix;
+  }
+
+  protected drawerColumns(): ColumnInfo[] {
+    return this.columnDrawerKind === 'source' ? this.sourceColumns : this.targetColumns;
+  }
+
+  protected drawerLoading(): boolean {
+    return this.columnDrawerKind === 'source'
+      ? this.sourceColumnLoading
+      : this.targetColumnLoading;
   }
 
   private loadDataSources(): void {

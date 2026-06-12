@@ -157,6 +157,29 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
     return item.status !== 'pending' && item.status !== 'running';
   }
 
+  protected failureSummary(item: DatabaseBackup): string {
+    const error = item.lastError || '';
+    if (error.includes('EOF') && error.includes('/rest/sql')) {
+      const table = item.currentTable || this.failedTableName(error) || '当前表';
+      return `备份在读取 ${table} 时，TDengine REST 连接被提前断开。常见原因是该表数据量较大、单批查询响应时间过长，或 6041 REST 服务/中间网络主动关闭了连接。`;
+    }
+    if (error.includes('context deadline exceeded') || error.includes('Client.Timeout')) {
+      return '备份查询超过了当前连接超时时间，后端没有在限定时间内拿到数据库响应。';
+    }
+    return '备份任务在读取数据或写入备份文件时失败，请结合原始错误和当前表信息排查。';
+  }
+
+  protected failureAdvice(item: DatabaseBackup): string {
+    const error = item.lastError || '';
+    if (error.includes('EOF') && error.includes('/rest/sql')) {
+      return '建议先调小备份批次大小，或在数据源连接参数里增大 timeout，例如 {"timeout":"2m"}；如果仍失败，再检查 TDengine REST 服务日志和网络代理超时。';
+    }
+    if (error.includes('context deadline exceeded') || error.includes('Client.Timeout')) {
+      return '建议增大数据源 timeout，或缩小批次大小后重试。';
+    }
+    return '建议先重试一次；如果稳定复现，查看当前表、数据源连接和后端日志。';
+  }
+
   protected retry(item: DatabaseBackup): void {
     if (item.status !== 'failed') return;
     this.retryingGuid = item.guid;
@@ -260,6 +283,11 @@ export class DatabaseBackupListComponent implements OnInit, OnDestroy {
     } catch {
       return [];
     }
+  }
+
+  private failedTableName(error: string): string {
+    const match = error.match(/query table\s+([^\s]+)\s+failed/i);
+    return match?.[1] || '';
   }
 
   protected formatTime(value?: number): string {

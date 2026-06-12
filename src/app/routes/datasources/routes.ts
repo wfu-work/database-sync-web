@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { DataSourceCreateComponent } from './create/data-source-create.component';
 import { DataSourceEditComponent } from './edit/data-source-edit.component';
+import { DataSourceHealthComponent } from './health/data-source-health.component';
 import { DataSourceListComponent } from './list/data-source-list.component';
 
 export const routes: Routes = [
@@ -15,6 +16,11 @@ export const routes: Routes = [
     path: 'create',
     component: DataSourceCreateComponent,
     data: { title: '新建数据源' },
+  },
+  {
+    path: 'health',
+    component: DataSourceHealthComponent,
+    data: { title: '连接健康' },
   },
   {
     path: 'edit/:guid',

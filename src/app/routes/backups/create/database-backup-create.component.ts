@@ -15,6 +15,17 @@ import { finalize } from 'rxjs';
 import { DataSourcesService } from '../../datasources/datasources.service';
 import { DatabaseBackupsService } from '../database-backups.service';
 
+const TDENGINE_BACKUP_PARAMS = {
+  timeout: '5m',
+};
+
+const MYSQL_BACKUP_PARAMS = {
+  timeout: '30s',
+  readTimeout: '5m',
+  writeTimeout: '5m',
+  interpolateParams: 'true',
+};
+
 @Component({
   selector: 'app-database-backup-create',
   templateUrl: './database-backup-create.component.html',
@@ -35,11 +46,15 @@ export class DatabaseBackupCreateComponent implements OnInit {
   protected dataSourceLoading = false;
   protected tableLoading = false;
   protected saving = false;
+  protected paramsError = '';
 
   protected readonly form = this.fb.group({
     dataSourceGuid: ['', [Validators.required]],
     tables: this.fb.control<string[]>([]),
     batchSize: [1000, [Validators.required, Validators.min(1)]],
+    connectionParams: [''],
+    retryTimes: [2, [Validators.required, Validators.min(0), Validators.max(10)]],
+    retryIntervalMs: [1500, [Validators.required, Validators.min(0)]],
     remark: ['', [Validators.maxLength(512)]],
   });
 
@@ -53,10 +68,14 @@ export class DatabaseBackupCreateComponent implements OnInit {
 
   protected resetForm(): void {
     this.tables = [];
+    this.paramsError = '';
     this.form.reset({
       dataSourceGuid: '',
       tables: [],
       batchSize: 1000,
+      connectionParams: '',
+      retryTimes: 2,
+      retryIntervalMs: 1500,
       remark: '',
     });
   }
@@ -64,6 +83,8 @@ export class DatabaseBackupCreateComponent implements OnInit {
   protected onDataSourceChange(guid: string): void {
     this.form.controls.tables.setValue([]);
     this.tables = [];
+    this.paramsError = '';
+    this.applyRecommendedParams();
     if (!guid) return;
 
     this.tableLoading = true;
@@ -92,6 +113,25 @@ export class DatabaseBackupCreateComponent implements OnInit {
     this.form.controls.tables.setValue([]);
   }
 
+  protected selectedDataSource(): DataSource | undefined {
+    const guid = this.form.controls.dataSourceGuid.value;
+    return this.dataSources.find((item) => item.guid === guid);
+  }
+
+  protected selectedTypeLabel(): string {
+    const type = this.selectedDataSource()?.type;
+    return this.normalizeType(type) === 'tdengine' ? 'TDengine' : 'MySQL';
+  }
+
+  protected applyRecommendedParams(): void {
+    const params =
+      this.normalizeType(this.selectedDataSource()?.type) === 'tdengine'
+        ? TDENGINE_BACKUP_PARAMS
+        : MYSQL_BACKUP_PARAMS;
+    this.form.controls.connectionParams.setValue(JSON.stringify(params, null, 2));
+    this.paramsError = '';
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       Object.values(this.form.controls).forEach((control) => {
@@ -102,12 +142,17 @@ export class DatabaseBackupCreateComponent implements OnInit {
     }
 
     const value = this.form.getRawValue();
+    const connectionParams = this.normalizeConnectionParams(value.connectionParams);
+    if (connectionParams === null) return;
     this.saving = true;
     this.backupsService
       .start({
         dataSourceGuid: value.dataSourceGuid,
         tables: value.tables,
         batchSize: value.batchSize,
+        connectionParams,
+        retryTimes: value.retryTimes,
+        retryIntervalMs: value.retryIntervalMs,
         remark: value.remark.trim(),
       })
       .pipe(
@@ -123,6 +168,27 @@ export class DatabaseBackupCreateComponent implements OnInit {
         },
         error: (err) => this.message.error(err?.msg || err?.message || '启动备份失败'),
       });
+  }
+
+  private normalizeType(type?: string): 'mysql' | 'tdengine' {
+    return type === 'tdengine' || type === 'td' || type === 'taos' ? 'tdengine' : 'mysql';
+  }
+
+  private normalizeConnectionParams(value: string): string | null {
+    value = value.trim();
+    this.paramsError = '';
+    if (!value) return '';
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        this.paramsError = '连接参数必须是 JSON 对象';
+        return null;
+      }
+      return JSON.stringify(parsed);
+    } catch {
+      this.paramsError = '连接参数不是合法 JSON';
+      return null;
+    }
   }
 
   private loadDataSources(): void {
