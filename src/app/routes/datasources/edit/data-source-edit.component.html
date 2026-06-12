@@ -39,12 +39,14 @@
             </sv>
 
             <sv label="密码">
-              <input
-                nz-input
-                type="password"
-                formControlName="password"
-                placeholder="留空则不覆盖旧密码"
-              />
+              <nz-input-password>
+                <input
+                  nz-input
+                  type="password"
+                  formControlName="password"
+                  placeholder="留空则不覆盖旧密码"
+                />
+              </nz-input-password>
             </sv>
 
             <sv label="数据库" [col]="2">

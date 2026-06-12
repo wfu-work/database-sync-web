@@ -113,6 +113,10 @@ export class SyncTaskCreateComponent implements OnInit {
     this.router.navigate(['/sync/tasks/list']);
   }
 
+  protected get scheduleEnabled(): boolean {
+    return Number(this.form.controls.scheduleOn.value) === 1;
+  }
+
   protected insertSample(): void {
     this.form.controls.fieldsText.setValue(JSON.stringify(FIELD_SAMPLE, null, 2));
     this.fieldError = '';
@@ -343,7 +347,8 @@ export class SyncTaskCreateComponent implements OnInit {
 
   private toPayload(): SaveSyncTaskPayload | null {
     const value = this.form.getRawValue();
-    if (Number(value.scheduleOn) === 1 && !value.cronExpr.trim()) {
+    const scheduleOn = Number(value.scheduleOn);
+    if (scheduleOn === 1 && !value.cronExpr.trim()) {
       this.formError = '启用定时执行时必须填写 Cron 表达式';
       return null;
     }
@@ -369,8 +374,8 @@ export class SyncTaskCreateComponent implements OnInit {
       writeMode: value.writeMode,
       conflictKeys: value.conflictKeys.trim(),
       whereClause: value.whereClause.trim(),
-      cronExpr: value.cronExpr.trim(),
-      scheduleOn: Number(value.scheduleOn),
+      cronExpr: scheduleOn === 1 ? value.cronExpr.trim() : '',
+      scheduleOn,
       remark: value.remark.trim(),
       status: Number(value.status),
     };

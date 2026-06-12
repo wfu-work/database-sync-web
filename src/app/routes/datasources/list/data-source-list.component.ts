@@ -55,9 +55,9 @@ export class DataSourceListComponent implements OnInit {
   protected readonly columns: Array<STColumn<DataSource>> = [
     { title: '数据源', index: 'name', render: 'nameRender' },
     { title: '连接', index: 'host', render: 'connectionRender' },
-    { title: '状态', index: 'status', render: 'statusRender', width: 90 },
-    { title: '更新时间', index: 'updateTime', render: 'timeRender', width: 180 },
-    { title: '操作', render: 'actionsRender', width: 280 },
+    { title: '状态', index: 'status', render: 'statusRender', },
+    { title: '更新时间', index: 'updateTime', render: 'timeRender', },
+    { title: '操作', render: 'actionsRender'},
   ];
 
   protected readonly previewForm = this.fb.group({

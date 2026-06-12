@@ -39,7 +39,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
             <i nz-icon nzType="home"></i>
             <span>工作台</span>
           </li>
-          <li nz-submenu nzTitle="数据源管理" nzIcon="database">
+          <li nz-submenu nzTitle="数据源" nzIcon="database">
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/datasources/list">
                 <span>数据源列表</span>
@@ -62,7 +62,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
               </li>
             </ul>
           </li>
-          <li nz-submenu nzTitle="数据库备份" nzIcon="hdd">
+          <li nz-submenu nzTitle="数据备份" nzIcon="hdd">
             <ul>
               <li nz-menu-item nzMatchRouter routerLink="/backups/history">
                 <span>备份历史</span>

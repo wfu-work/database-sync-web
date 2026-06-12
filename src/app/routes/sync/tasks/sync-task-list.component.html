@@ -372,12 +372,14 @@
               </nz-form-control>
             </nz-form-item>
 
-            <nz-form-item>
-              <nz-form-label>Cron 表达式</nz-form-label>
-              <nz-form-control>
-                <input nz-input formControlName="cronExpr" placeholder="例如：0 */5 * * * *" />
-              </nz-form-control>
-            </nz-form-item>
+            @if (scheduleEnabled) {
+              <nz-form-item>
+                <nz-form-label>Cron 表达式</nz-form-label>
+                <nz-form-control>
+                  <input nz-input formControlName="cronExpr" placeholder="例如：0 */5 * * * *" />
+                </nz-form-control>
+              </nz-form-item>
+            }
           </div>
 
           <nz-form-item>
