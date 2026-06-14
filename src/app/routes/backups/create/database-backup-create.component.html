@@ -41,6 +41,7 @@
               [nzLoading]="tableLoading"
               [nzDisabled]="!form.controls.dataSourceGuid.value"
               [nzMaxTagCount]="4"
+              (ngModelChange)="onTablesChange()"
             >
               @for (table of tables; track table.name) {
                 <nz-option
@@ -138,13 +139,45 @@
               <span class="field-help">两次批次重试之间等待的毫秒数，默认 1500。</span>
             </sv>
 
+            @if (tdengineSelected()) {
+              <sv label="时间字段">
+                <input
+                  nz-input
+                  formControlName="backupTimeField"
+                  placeholder="例如：gps_time；全表备份建议留空"
+                />
+                <span class="field-help"
+                  >留空时每张表按自身时间列自动识别；仅在所有表时间字段一致时填写。</span
+                >
+              </sv>
+
+              <sv label="开始时间">
+                <input nz-input formControlName="backupStartTime" placeholder="例如：2026-06-01" />
+                <span class="field-help">填写后启用时间窗口备份；日期会从当天 00:00:00 开始。</span>
+              </sv>
+
+              <sv label="结束时间">
+                <input nz-input formControlName="backupEndTime" placeholder="默认当前时间" />
+                <span class="field-help">可留空表示备份到当前时间；日期会包含整天。</span>
+              </sv>
+
+              <sv label="窗口粒度">
+                <nz-select formControlName="backupWindow">
+                  <nz-option nzValue="day" nzLabel="按天" />
+                  <nz-option nzValue="hour" nzLabel="按小时" />
+                  <nz-option nzValue="minute" nzLabel="按分钟" />
+                </nz-select>
+                <span class="field-help">数据极密集时可改为按小时，单窗口仍失败时再按分钟。</span>
+              </sv>
+            }
+
             <sv label="推荐批次" col="1">
               <div class="hint-card">
                 <strong>{{ selectedTypeLabel() }}</strong>
                 <span>
                   {{
                     selectedTypeLabel() === 'TDengine'
-                      ? '大表建议 200-1000；先调大 timeout，再按压力调整批次。'
+                      ? '大表建议 100-500，并填写开始时间启用时间窗口。'
                       : 'MySQL 建议保留 500-2000；慢表优先调 readTimeout/writeTimeout。'
                   }}
                 </span>

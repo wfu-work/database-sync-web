@@ -16,13 +16,13 @@ module.exports = {
     changeOrigin: true,
   },
   '/api/ws': {
-    target: 'http://127.0.0.1:3010',
+    target: 'https://datasync.navfirst.com',
     secure: false,
     ws: true,
     changeOrigin: true,
   },
   '/api/': {
-    target: 'http://127.0.0.1:3010/api/',
+    target: 'https://datasync.navfirst.com/api/',
     secure: false,
     pathRewrite: {
       '^/api/': '',

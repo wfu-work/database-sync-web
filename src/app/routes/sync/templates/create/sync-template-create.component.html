@@ -70,9 +70,9 @@
             <i nz-icon nzType="sync"></i>
           </button>
         </span>
-        <span class="metadata-line" [class.loading]="sourceColumnLoading">
+        <div class="metadata-line" [class.loading]="sourceColumnLoading">
           源字段：{{ columnSummary(sourceColumns) }}
-        </span>
+        </div>
       </sv>
       <sv label="目标表">
         <span class="table-picker">
@@ -102,9 +102,9 @@
             <i nz-icon nzType="sync"></i>
           </button>
         </span>
-        <span class="metadata-line" [class.loading]="targetColumnLoading">
+        <div class="metadata-line" [class.loading]="targetColumnLoading">
           目标字段：{{ columnSummary(targetColumns) }}
-        </span>
+        </div>
       </sv>
     </sv-container>
 

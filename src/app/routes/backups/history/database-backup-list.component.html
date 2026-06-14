@@ -338,6 +338,36 @@
               <span>当前批次</span>
               <strong>{{ selectedBackup.currentBatch || 0 }}</strong>
             </div>
+            @if (selectedBackup.currentWindow) {
+              <div>
+                <span>当前窗口</span>
+                <strong>{{ selectedBackup.currentWindow }}</strong>
+              </div>
+            }
+            @if (selectedBackup.backupTimeField) {
+              <div>
+                <span>时间字段</span>
+                <strong>{{ selectedBackup.backupTimeField }}</strong>
+              </div>
+            }
+            @if (selectedBackup.backupStartTime) {
+              <div>
+                <span>开始时间</span>
+                <strong>{{ selectedBackup.backupStartTime }}</strong>
+              </div>
+            }
+            @if (selectedBackup.backupEndTime) {
+              <div>
+                <span>结束时间</span>
+                <strong>{{ selectedBackup.backupEndTime }}</strong>
+              </div>
+            }
+            @if (selectedBackup.backupWindow) {
+              <div>
+                <span>窗口粒度</span>
+                <strong>{{ selectedBackup.backupWindow }}</strong>
+              </div>
+            }
             <div>
               <span>当前表耗时</span>
               <strong>{{ runningDuration(selectedBackup) }}</strong>
@@ -390,7 +420,6 @@
               <div class="text-box">{{ selectedBackup.remark }}</div>
             </section>
           }
-
         } @else {
           <div class="empty-state">正在读取备份详情。</div>
         }

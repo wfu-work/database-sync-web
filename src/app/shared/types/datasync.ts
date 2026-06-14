@@ -399,6 +399,11 @@ export interface DatabaseBackup extends BaseEntity {
   batchSize: number;
   retryTimes: number;
   retryIntervalMs: number;
+  backupTimeField: string;
+  backupStartTime: string;
+  backupEndTime: string;
+  backupWindow: string;
+  currentWindow: string;
   format: string;
   status: BackupStatus | string;
   totalTables: number;
@@ -426,6 +431,10 @@ export interface StartDatabaseBackupPayload {
   connectionParams?: string;
   retryTimes?: number;
   retryIntervalMs?: number;
+  backupTimeField?: string;
+  backupStartTime?: string;
+  backupEndTime?: string;
+  backupWindow?: string;
   remark?: string;
 }
 

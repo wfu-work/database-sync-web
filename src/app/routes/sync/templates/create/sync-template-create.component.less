@@ -4,6 +4,7 @@
 
 .sync-template-create {
   overflow: auto;
+  min-width: 0;
   max-height: calc(100vh - 220px);
   padding-right: 4px;
 }
@@ -11,6 +12,7 @@
 .sv-form {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .form-sv {
@@ -52,19 +54,26 @@ textarea {
   min-width: 0;
 }
 
+.table-picker nz-select {
+  min-width: 0;
+}
+
 .table-picker button {
   white-space: nowrap;
 }
 
 .metadata-line {
-  display: block;
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 18px;
+  max-height: 36px;
   margin-top: 6px;
-  color: #6b778c;
   font-size: 12px;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 18px;
+  color: #6b778c;
+  overflow-wrap: anywhere;
 }
 
 .metadata-line.loading {

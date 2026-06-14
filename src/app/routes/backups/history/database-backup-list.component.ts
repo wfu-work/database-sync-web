@@ -170,6 +170,9 @@ export class DatabaseBackupListComponent implements OnInit {
   protected failureAdvice(item: DatabaseBackup): string {
     const error = item.lastError || '';
     if (error.includes('EOF') && error.includes('/rest/sql')) {
+      if (item.backupTimeField && item.backupStartTime) {
+        return '建议继续缩小窗口粒度，例如从按天改为按小时，或把 batchSize 调小到 100-500；如果仍失败，再检查 TDengine REST 服务日志和网络代理超时。';
+      }
       return '建议先调小备份批次大小，或在数据源连接参数里增大 timeout，例如 {"timeout":"2m"}；如果仍失败，再检查 TDengine REST 服务日志和网络代理超时。';
     }
     if (error.includes('context deadline exceeded') || error.includes('Client.Timeout')) {

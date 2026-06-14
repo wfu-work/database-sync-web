@@ -8,7 +8,7 @@ import {
 import { NonNullableFormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SHARED_IMPORTS, TitleLabelComponent } from '@shared';
-import { DataSource, TableInfo } from '@shared/types/datasync';
+import { ColumnInfo, DataSource, TableInfo } from '@shared/types/datasync';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { finalize } from 'rxjs';
 
@@ -45,6 +45,7 @@ export class DatabaseBackupCreateComponent implements OnInit {
 
   protected dataSources: DataSource[] = [];
   protected tables: TableInfo[] = [];
+  protected columns: ColumnInfo[] = [];
   protected dataSourceLoading = false;
   protected tableLoading = false;
   protected saving = false;
@@ -58,6 +59,10 @@ export class DatabaseBackupCreateComponent implements OnInit {
     connectionParams: [''],
     retryTimes: [2, [Validators.required, Validators.min(0), Validators.max(10)]],
     retryIntervalMs: [1500, [Validators.required, Validators.min(0)]],
+    backupTimeField: [''],
+    backupStartTime: [''],
+    backupEndTime: [''],
+    backupWindow: ['day'],
     remark: ['', [Validators.maxLength(512)]],
   });
 
@@ -80,6 +85,10 @@ export class DatabaseBackupCreateComponent implements OnInit {
       connectionParams: '',
       retryTimes: 2,
       retryIntervalMs: 1500,
+      backupTimeField: '',
+      backupStartTime: '',
+      backupEndTime: '',
+      backupWindow: 'day',
       remark: '',
     });
   }
@@ -87,8 +96,10 @@ export class DatabaseBackupCreateComponent implements OnInit {
   protected onDataSourceChange(guid: string): void {
     this.form.controls.tables.setValue([]);
     this.tables = [];
+    this.columns = [];
     this.paramsError = '';
     this.applyRecommendedParams();
+    this.applyDefaultWindowValues();
     if (!guid) return;
 
     this.tableLoading = true;
@@ -104,6 +115,7 @@ export class DatabaseBackupCreateComponent implements OnInit {
         next: (items) => {
           if (this.form.controls.dataSourceGuid.value !== guid) return;
           this.tables = items ?? [];
+          this.loadTableColumnsForTimeField();
         },
         error: (err) => this.message.error(err?.msg || err?.message || '读取数据表失败'),
       });
@@ -111,10 +123,18 @@ export class DatabaseBackupCreateComponent implements OnInit {
 
   protected selectAllTables(): void {
     this.form.controls.tables.setValue(this.tables.map((table) => table.name));
+    this.loadTableColumnsForTimeField();
   }
 
   protected clearTables(): void {
     this.form.controls.tables.setValue([]);
+    this.loadTableColumnsForTimeField();
+  }
+
+  protected onTablesChange(): void {
+    this.columns = [];
+    this.form.controls.backupTimeField.setValue('');
+    this.loadTableColumnsForTimeField();
   }
 
   protected selectedDataSource(): DataSource | undefined {
@@ -125,6 +145,10 @@ export class DatabaseBackupCreateComponent implements OnInit {
   protected selectedTypeLabel(): string {
     const type = this.selectedDataSource()?.type;
     return this.normalizeType(type) === 'tdengine' ? 'TDengine' : 'MySQL';
+  }
+
+  protected tdengineSelected(): boolean {
+    return this.normalizeType(this.selectedDataSource()?.type) === 'tdengine';
   }
 
   protected applyRecommendedParams(): void {
@@ -157,6 +181,16 @@ export class DatabaseBackupCreateComponent implements OnInit {
         connectionParams,
         retryTimes: value.retryTimes,
         retryIntervalMs: value.retryIntervalMs,
+        backupTimeField: this.windowBackupEnabled(value.backupStartTime)
+          ? value.backupTimeField.trim()
+          : '',
+        backupStartTime: this.windowBackupEnabled(value.backupStartTime)
+          ? value.backupStartTime.trim()
+          : '',
+        backupEndTime: this.windowBackupEnabled(value.backupStartTime)
+          ? value.backupEndTime.trim()
+          : '',
+        backupWindow: this.windowBackupEnabled(value.backupStartTime) ? value.backupWindow : '',
         remark: value.remark.trim(),
       })
       .pipe(
@@ -239,5 +273,62 @@ export class DatabaseBackupCreateComponent implements OnInit {
         },
         error: (err) => this.message.error(err?.msg || err?.message || '读取数据源失败'),
       });
+  }
+
+  private applyDefaultWindowValues(): void {
+    if (!this.tdengineSelected()) {
+      this.form.patchValue({
+        backupTimeField: '',
+        backupStartTime: '',
+        backupEndTime: '',
+        backupWindow: 'day',
+      });
+      return;
+    }
+    this.form.patchValue({
+      backupStartTime: '',
+      backupEndTime: '',
+      backupWindow: 'day',
+    });
+  }
+
+  private windowBackupEnabled(startTime: string): boolean {
+    return this.tdengineSelected() && startTime.trim() !== '';
+  }
+
+  private loadTableColumnsForTimeField(): void {
+    if (!this.tdengineSelected()) return;
+    const guid = this.form.controls.dataSourceGuid.value;
+    const selectedTables = this.form.controls.tables.value;
+    if (selectedTables.length !== 1) {
+      this.columns = [];
+      this.form.controls.backupTimeField.setValue('');
+      this.cdr.markForCheck();
+      return;
+    }
+    const table = selectedTables[0];
+    if (!guid || !table) return;
+    this.dataSourcesService.columns(guid, table).subscribe({
+      next: (items) => {
+        if (this.form.controls.dataSourceGuid.value !== guid) return;
+        const currentTables = this.form.controls.tables.value;
+        if (currentTables.length !== 1 || currentTables[0] !== table) return;
+        this.columns = items ?? [];
+        if (!this.form.controls.backupTimeField.value) {
+          this.form.controls.backupTimeField.setValue(this.inferTimeField(this.columns));
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => undefined,
+    });
+  }
+
+  private inferTimeField(columns: ColumnInfo[]): string {
+    const timestamp = columns.find((column) =>
+      String(column.databaseType || '')
+        .toLowerCase()
+        .includes('timestamp'),
+    );
+    return timestamp?.name || columns[0]?.name || '';
   }
 }
